@@ -283,26 +283,18 @@ Example:
 ---
 # Security Notes / セキュリティ注意事項
 
-Do NOT commit:
+Do not commit the following files or data to Git.
 
-- `.env`
-- databases
-- API keys
-- private certificates
-- logs
-- local notes
+以下のファイルやデータは Git にコミットしないでください。
 
-Gitへコミットしないこと:
-
-- `.env`
-- DBファイル
-- APIキー
-- 証明書
-- ログ
-- ローカルメモ
+- `.env` files / `.env` ファイル
+- databases / DBファイル
+- API keys / APIキー
+- private keys or certificates / 秘密鍵・証明書
+- logs / ログ
+- local notes / ローカルメモ
 
 ---
-
 # Repository Structure / ディレクトリ構成
 
 ```text
@@ -436,6 +428,7 @@ Redistribution, modification, or commercial use requires prior permission.
 Active development.
 
 開発継続中。
+
 
 
 
