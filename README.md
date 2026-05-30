@@ -34,6 +34,15 @@ This project focuses on:
 
 ---
 
+# Screenshot / スクリーンショット
+
+Network Check running locally.
+
+ローカル環境で動作している Network Check の画面例です。
+
+![Network Check screenshot](docs/images/network-check-screenshot.png)
+
+---
 # Features / 機能
 
 ## Client Information / クライアント情報
@@ -425,6 +434,9 @@ Redistribution, modification, or commercial use requires prior permission.
 Active development.
 
 開発継続中。
+
+
+
 
 
 
