@@ -269,32 +269,18 @@ The restart command assumes the application is managed via systemd.
 
 # Environment Variables / 環境変数
 
-Create `.env`.
+Create `.env` from `.env.example`.
 
-`.env` を作成してください。
+`.env.example` を参考に `.env` を作成してください。
 
 Example:
 
-```env
-SITE_NAME=Network Check
-PUBLIC_BASE_PATH=/network-check
-CONTACT_NAME=Network Check Project
-CONTACT_EMAIL=contact@example.com
-```
+    SITE_NAME=Network Check
+    PUBLIC_BASE_PATH=/network-check
+    CONTACT_NAME=Network Check Project
+    CONTACT_EMAIL=contact@example.com
 
 ---
-
-# Example `.env.example`
-
-```env
-SITE_NAME=Network Check
-PUBLIC_BASE_PATH=/network-check
-CONTACT_NAME=Network Check Project
-CONTACT_EMAIL=contact@example.com
-```
-
----
-
 # Security Notes / セキュリティ注意事項
 
 Do NOT commit:
@@ -450,6 +436,7 @@ Redistribution, modification, or commercial use requires prior permission.
 Active development.
 
 開発継続中。
+
 
 
 
