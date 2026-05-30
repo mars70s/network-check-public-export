@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}DNS Timing / DNS応答時間{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">DNS Timing</p>
+  <h1>DNS Timing<span>DNS応答時間を確認</span></h1>
+  <p class="lead">Enter a domain name to measure A and AAAA DNS query response times.<br>ドメイン名を入力すると、AレコードとAAAAレコードのDNS応答時間を測定します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/dns-timing" class="domain-form">
+    <label for="domain">Domain name<small>ドメイン名</small></label>
+    <div class="form-row">
+      <input id="domain" name="domain" type="text" placeholder="example.com" value="{{ domain_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">Response times are reference values from this server runtime.<br>応答時間はこのサーバ実行環境から見た参考値です。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>{{ result.domain }} DNS timing result <small>{{ result.domain }} のDNS応答時間</small></h2>
+      <p class="status">{{ result.status }}</p>
+    </section>
+
+    <section class="grid two">
+      <article class="card">
+        <h2>A Record Timing <small>Aレコード応答時間</small></h2>
+        <p class="status">{{ result.a_result.elapsed_ms }} ms</p>
+        {% if result.a_result.records %}
+          <ul class="record-list">
+            {% for record in result.a_result.records %}
+              <li>{{ record }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty">Not found. / 見つかりませんでした。</p>
+        {% endif %}
+      </article>
+
+      <article class="card">
+        <h2>AAAA Record Timing <small>AAAAレコード応答時間</small></h2>
+        <p class="status">{{ result.aaaa_result.elapsed_ms }} ms</p>
+        {% if result.aaaa_result.records %}
+          <ul class="record-list">
+            {% for record in result.aaaa_result.records %}
+              <li>{{ record }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty">Not found. / 見つかりませんでした。</p>
+        {% endif %}
+      </article>
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function only performs normal DNS A and AAAA queries for one user-entered domain. It does not perform port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力した1つのドメインに対する通常のDNS A/AAAA問い合わせのみを行います。ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
+</section>
+{% endblock %}
+

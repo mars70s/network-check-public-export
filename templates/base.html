@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Network Check / ネット環境チェック{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{{ base_path }}/">Network Check</a>
+      <nav>
+        <a class="{% if page == 'home' %}active{% endif %}" href="{{ base_path }}/">My Network<br><small>自分の環境</small></a>
+        <a class="{% if page == 'domain' %}active{% endif %}" href="{{ base_path }}/domain">Domain Check<br><small>ドメイン確認</small></a>
+        <a class="{% if page == 'tls' %}active{% endif %}" href="{{ base_path }}/tls">TLS Check<br><small>TLS確認</small></a>
+        <a class="{% if page == 'http2' %}active{% endif %}" href="{{ base_path }}/http2">HTTP/2 Check<br><small>HTTP/2確認</small></a>
+        <a class="{% if page == 'dns_timing' %}active{% endif %}" href="{{ base_path }}/dns-timing">DNS Timing<br><small>DNS応答時間</small></a>
+        <a class="{% if page == 'ip_preference' %}active{% endif %}" href="{{ base_path }}/ip-preference">IP Preference<br><small>IP優先状況</small></a>
+        <a class="{% if page == 'mx' %}active{% endif %}" href="{{ base_path }}/mx">MX Check<br><small>MX確認</small></a>
+        <a class="{% if page == 'spf' %}active{% endif %}" href="{{ base_path }}/spf">SPF Check<br><small>SPF確認</small></a>
+        <a class="{% if page == 'dmarc' %}active{% endif %}" href="{{ base_path }}/dmarc">DMARC Check<br><small>DMARC確認</small></a>
+        <a class="{% if page == 'privacy' %}active{% endif %}" href="{{ base_path }}/privacy">Privacy<br><small>プライバシー</small></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="container footer">
+    <div class="safety-note">
+      <strong>No scanning / スキャンなし:</strong>
+      This site does not perform port scanning, vulnerability scanning, unauthorized access, or bulk crawling.
+      このサイトは、ポートスキャン、脆弱性診断、不正アクセス、大量クロールを行いません。
+    </div>
+    <p class="footer-links">
+      <a href="{{ base_path }}/privacy">Privacy Policy / プライバシーポリシー</a>
+      <span>·</span>
+      <a href="{{ base_path }}/terms">Terms / 利用規約</a>
+      <span>·</span>
+      <a href="{{ base_path }}/contact">Contact / お問い合わせ</a>
+    </p>
+    <p>
+      This site only checks your own connection information and DNS records for one domain entered by the user.<br>
+      このサイトは、利用者自身の接続情報と入力された1ドメインのDNS情報だけを確認します。
+    </p>
+  </footer>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

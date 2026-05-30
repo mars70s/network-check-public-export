@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}HTTP/2 Check / HTTP/2確認{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">HTTP/2 Check</p>
+  <h1>HTTP/2 Check<span>HTTP/2対応を確認</span></h1>
+  <p class="lead">Enter a domain name to check whether HTTP/2 can be negotiated over HTTPS.<br>ドメイン名を入力すると、HTTPS接続でHTTP/2が使用されるか確認します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/http2" class="domain-form">
+    <label for="domain">Domain name<small>ドメイン名</small></label>
+    <div class="form-row">
+      <input id="domain" name="domain" type="text" placeholder="example.com" value="{{ domain_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">This check uses the server runtime curl capability. If HTTP/2 is unavailable in the runtime, the page will show unavailable.<br>この確認は実行環境のcurl機能を使用します。実行環境がHTTP/2非対応の場合は unavailable と表示します。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+    </section>
+  {% elif not result.available %}
+    <section class="card result warn">
+      <h2>{{ result.domain }} HTTP/2 result <small>{{ result.domain }} のHTTP/2結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>{{ result.domain }} HTTP/2 result <small>{{ result.domain }} のHTTP/2結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+      <ul class="record-list">
+        <li>HTTP Version / HTTPバージョン: {{ result.http_version }}</li>
+        <li>Status Code / ステータスコード: {{ result.status_code }}</li>
+        <li>Final URL / 最終URL: {{ result.final_url }}</li>
+      </ul>
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function only performs a normal HTTPS request to the user-entered domain. It does not perform port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力したドメインへ通常のHTTPSリクエストを行うだけです。ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
+</section>
+{% endblock %}
+

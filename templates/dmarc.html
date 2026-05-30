@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}DMARC Check / DMARCレコード確認{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">DMARC Check</p>
+  <h1>DMARC Check<span>メール認証ポリシーを確認</span></h1>
+  <p class="lead">Enter a domain name to check whether it publishes a DMARC record under _dmarc.<br>ドメイン名を入力すると、_dmarc 配下のDMARCレコードを確認します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/dmarc" class="domain-form">
+    <label for="domain">Domain name<small>ドメイン名</small></label>
+    <div class="form-row">
+      <input id="domain" name="domain" type="text" placeholder="example.com" value="{{ domain_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">This check only performs a normal DNS TXT query for _dmarc.&lt;domain&gt; and extracts records starting with v=DMARC1.<br>この確認は _dmarc.&lt;domain&gt; に対する通常のDNS TXT問い合わせを行い、v=DMARC1で始まるレコードだけを抽出します。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>{{ result.domain }} DMARC result <small>{{ result.domain }} のDMARC結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+      <p class="hint">Query domain / 問い合わせ先: {{ result.query_domain }}</p>
+
+      {% if result.records %}
+        <ul class="record-list">
+          {% for record in result.records %}
+            <li>{{ record }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">No DMARC records were found. / DMARCレコードは見つかりませんでした。</p>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function only checks DNS TXT records for one user-entered domain and extracts DMARC records. It does not perform SMTP connection tests, mail sending tests, port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力した1つのドメインに対するDNS TXTレコード確認とDMARCレコード抽出のみを行います。SMTP接続試験、メール送信試験、ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
+</section>
+{% endblock %}

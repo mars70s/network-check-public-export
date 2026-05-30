@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}MX Check / MXレコード確認{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">MX Check</p>
+  <h1>MX Check<span>メール配送先を確認</span></h1>
+  <p class="lead">Enter a domain name to check its DNS MX records.<br>ドメイン名を入力すると、DNS MXレコードを確認します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/mx" class="domain-form">
+    <label for="domain">Domain name<small>ドメイン名</small></label>
+    <div class="form-row">
+      <input id="domain" name="domain" type="text" placeholder="example.com" value="{{ domain_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">This check only performs a normal DNS MX query. It does not connect to mail servers.<br>この確認は通常のDNS MX問い合わせのみを行います。メールサーバへの接続は行いません。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>{{ result.domain }} MX result <small>{{ result.domain }} のMX結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+
+      {% if result.records %}
+        <table class="record-table">
+          <thead>
+            <tr>
+              <th>Priority<br><small>優先度</small></th>
+              <th>Host<br><small>ホスト</small></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in result.records %}
+              <tr>
+                <td>{{ record.preference }}</td>
+                <td>{{ record.exchange }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">No MX records were found. / MXレコードは見つかりませんでした。</p>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function only checks DNS MX records for one user-entered domain. It does not perform SMTP connection tests, port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力した1つのドメインに対するDNS MXレコード確認のみを行います。SMTP接続試験、ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
+</section>
+{% endblock %}

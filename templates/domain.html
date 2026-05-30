@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Domain IPv4/IPv6 Check / ドメインIPv4・IPv6確認{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Domain Check</p>
+  <h1>Domain Check<span>ドメインのIPv4 / IPv6対応を確認</span></h1>
+  <p class="lead">Enter a domain name to check its A and AAAA DNS records.<br>ドメイン名を入力すると、AレコードとAAAAレコードを確認します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/domain" class="domain-form">
+    <label for="domain">Domain name<small>ドメイン名</small></label>
+    <div class="form-row">
+      <input id="domain" name="domain" type="text" placeholder="example.com" value="{{ domain_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">Example: example.com. If you paste a URL, only the domain part will be used.<br>例: example.com。URLを貼ってもドメイン部分だけを使います。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>{{ result.domain }} result <small>{{ result.domain }} の結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+      <p>{{ result.message }}</p>
+    </section>
+    <section class="grid two">
+      <article class="card">
+        <h2>A Records <small>Aレコード</small></h2>
+        <p class="hint">DNS records used for IPv4 addresses.<br>IPv4用のDNSレコードです。</p>
+        {% if result.a_records %}
+          <ul class="record-list">{% for record in result.a_records %}<li>{{ record }}</li>{% endfor %}</ul>
+        {% else %}
+          <p class="empty">Not found. / 見つかりませんでした。</p>
+        {% endif %}
+      </article>
+      <article class="card">
+        <h2>AAAA Records <small>AAAAレコード</small></h2>
+        <p class="hint">DNS records used for IPv6 addresses.<br>IPv6用のDNSレコードです。</p>
+        {% if result.aaaa_records %}
+          <ul class="record-list">{% for record in result.aaaa_records %}<li>{{ record }}</li>{% endfor %}</ul>
+        {% else %}
+          <p class="empty">Not found. / 見つかりませんでした。</p>
+        {% endif %}
+      </article>
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function only checks DNS A and AAAA records for one user-entered domain. It does not perform port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力した1つのドメインに対するDNSのA/AAAAレコード確認のみです。ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
+</section>
+{% endblock %}
+
+
+
+
