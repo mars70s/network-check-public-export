@@ -237,36 +237,33 @@ http://127.0.0.1:8000
 
 ---
 
-# Production Deployment Flow / 本番反映フロー
+# Deployment Notes / デプロイに関する補足
 
-## Local Development
+Deployment method depends on the target environment.
 
-```text
-Edit locally
-↓
-Test locally
-↓
-git commit
-↓
-git push
-```
+デプロイ方法は実行環境により異なります。
 
-## Production Deployment
+This public repository does not assume a specific production server, reverse proxy, process manager, or service name.
 
-```bash
-cd /path/to/network-check
-git pull
-systemctl restart network-check
-```
+この公開リポジトリでは、特定の本番サーバー、reverse proxy、process manager、service 名を前提にしません。
 
-Note:
-The restart command assumes the application is managed via systemd.
+General deployment considerations:
 
-補足:
-上記コマンドは systemd によるサービス管理を前提としています。
+- keep environment-specific values outside Git
+- use `.env` or an equivalent mechanism for local configuration
+- run the application with an appropriate ASGI server
+- place reverse proxy, TLS, process manager, and restart policy under the operator's responsibility
+- test routes locally before deployment
+
+一般的な注意事項:
+
+- 環境固有値は Git の外に分離する
+- `.env` または同等の仕組みでローカル設定を管理する
+- 適切な ASGI server でアプリケーションを実行する
+- reverse proxy、TLS、process manager、restart policy は運用者の責任で設定する
+- デプロイ前にローカルで route を確認する
 
 ---
-
 # Environment Variables / 環境変数
 
 Create `.env` from `.env.example`.
@@ -428,6 +425,7 @@ Redistribution, modification, or commercial use requires prior permission.
 Active development.
 
 開発継続中。
+
 
 
 
