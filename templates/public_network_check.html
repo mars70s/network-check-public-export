@@ -1,0 +1,182 @@
+{% extends "public_base.html" %}
+{% block title %}Network Check / ドメインの基本確認{% endblock %}
+{% block content %}
+<section class="public-hero">
+  <p class="eyebrow">どうでもいいけど、少しだけ気になる。</p>
+  <h1>Domain visibility check<span>ドメインのこと</span></h1>
+  <p class="lead">
+    See public DNS, web response, TLS, mail DNS, IPv4, and IPv6 observations in one place.
+  </p>
+  <p class="public-en">
+    URLを開くだけでは見えにくいドメインの状態を、確認できた範囲でまとめます。
+  </p>
+  <aside class="public-notice">
+    <strong>このページについて</strong>
+    <p>
+      このページは、脆弱性を探すスキャンや、攻撃可能性を判定するものではありません。
+    </p>
+    <p>
+      公開されている情報を、確認できた範囲でやさしく表示するためのページです。
+    </p>
+  </aside>
+</section>
+
+<section class="public-tool-shell" aria-label="Domain basic check">
+  <section class="multi-page-shell public-multi-shell">
+    <section class="multi-hero public-multi-heading">
+      <div class="multi-hero-copy">
+        <p class="eyebrow">このページで見えること</p>
+        <h2>What this page looks at <small>公開されているドメイン情報を少しだけ確認します</small></h2>
+        <p class="lead">
+          DNS、Web応答、TLS、メール関連DNS、IPv4/IPv6 を、確認できた範囲でまとめます。
+          <span class="multi-ja">This page summarizes public DNS, web response, TLS, mail DNS, IPv4, and IPv6 observations.</span>
+        </p>
+      </div>
+      <aside class="public-planned-note">
+        <strong>解説一覧を追加しました。</strong>
+        <p>
+          見えている情報の読み方を知りたい場合は、<a href="{{ public_path }}/guide/">Network Check guide</a>をご覧ください。
+          DNS、PTR、CNAME、IPv4/IPv6、メール関連DNS、TLS、Security Headers、HTTP Status の解説をまとめています。
+          <span class="multi-ja">A quiet guide index is available for the public explanation pages.</span>
+        </p>
+      </aside>
+    </section>
+
+    <section class="multi-dashboard">
+      <form id="multi-check-form" class="multi-form" data-api-url="{{ base_path }}/api/multi-check/run">
+        <section class="multi-control-card">
+          <div class="multi-control-heading">
+            <div>
+              <p class="multi-kicker">入力</p>
+              <h2>ドメイン名 <small>Domain</small></h2>
+            </div>
+          </div>
+          <label for="multi-check-domain">ドメイン名</label>
+          <p class="multi-field-helper">
+            https:// は付けずに、example.com のように入力してください。
+            <span class="multi-ja">Enter a domain like example.com, without https://.</span>
+          </p>
+          <div class="multi-domain-row">
+            <input id="multi-check-domain" name="domain" type="text" placeholder="example.com" autocomplete="off" required>
+            <button class="multi-primary-action" type="submit">このドメインを見る</button>
+          </div>
+          <p class="multi-action-helper">
+            自分で管理している、または確認してよい公開ドメインだけを入力してください。
+            <span class="multi-ja">Use only domains you own or are allowed to check.</span>
+          </p>
+        </section>
+
+        <section class="multi-status-panel" aria-live="polite">
+          <div>
+            <p class="multi-kicker">確認のようす</p>
+            <p id="multi-check-status">
+              <span>確認したい項目を選んでから、このドメインを見るを押してください。</span>
+              <span class="multi-ja">Select one or more items, then look at the domain.</span>
+            </p>
+            <p id="multi-check-summary" class="multi-status-summary"></p>
+          </div>
+          <div class="multi-clear-actions" hidden>
+            <button id="multi-check-clear" class="multi-secondary-action" type="button" hidden>結果を消す / Clear</button>
+            <p class="multi-clear-helper">
+              表示された結果をクリアします。
+              <span class="multi-ja">Clear displayed results.</span>
+            </p>
+          </div>
+        </section>
+
+        <section class="multi-scope-note" aria-label="Result safety note">
+          <h2>このドメインについて見えたこと</h2>
+          <p>
+            この結果は、安全性を保証するものではありません。
+          </p>
+          <p>
+            表示される内容は、公開DNSや通常のWeb応答から確認できた範囲の情報です。
+          </p>
+          <p>
+            自分で管理している、または確認してよい公開ドメインだけを入力してください。
+          </p>
+        </section>
+
+        <section id="multi-check-results" class="multi-results-grid" aria-live="polite"></section>
+
+        <section class="multi-control-card">
+          <div class="multi-control-heading">
+            <div>
+              <p class="multi-kicker">選べる項目</p>
+              <h2>少しだけ見てみること <small>What this page looks at</small></h2>
+            </div>
+            <span class="multi-soft-pill">{{ multi_check_options|length }}項目</span>
+          </div>
+          <div class="multi-check-grid" aria-label="What you can check">
+            {% set category_group = namespace(label="") %}
+            {% for option in multi_check_options %}
+            {% if option.category_label != category_group.label %}
+            {% set category_group.label = option.category_label %}
+            <div class="multi-check-category-heading">
+              <h3>{{ option.category_label }}</h3>
+            </div>
+            {% endif %}
+            <label class="multi-check-option">
+              {% if option.id == "domain" %}
+              {% set public_label = "ドメイン名と住所の関係" %}
+              {% set public_tech_label = "DNS / A / AAAA / CNAME" %}
+              {% set public_description = "ドメイン名が、どの住所や別の名前につながっているかを見ます。" %}
+              {% elif option.id == "dns_timing" %}
+              {% set public_label = "住所を調べる速さ" %}
+              {% set public_tech_label = "DNS Timing" %}
+              {% set public_description = "ドメイン名から住所を調べるときに、応答が返るまでのおおよその時間を見ます。これはWebページ全体の表示速度ではなく、住所を調べる部分の目安です。" %}
+              {% elif option.id == "caa" %}
+              {% set public_label = "証明書の発行方針" %}
+              {% set public_tech_label = "CAA" %}
+              {% set public_description = "このドメインの証明書を、どの認証局が発行してよいかを示す情報を見ます。現在の証明書そのものとは分けて読みます。" %}
+              {% elif option.id == "mx" %}
+              {% set public_label = "メールを受け取る窓口" %}
+              {% set public_tech_label = "MX" %}
+              {% set public_description = "そのドメイン宛てのメールを、どのメールサーバーが受け取るよう案内されているかを見ます。" %}
+              {% elif option.id == "spf" %}
+              {% set public_label = "メール送信元の方針" %}
+              {% set public_tech_label = "SPF" %}
+              {% set public_description = "そのドメインを名乗ってメールを送るとき、どの送信元が認められているかを DNS 上で見ます。" %}
+              {% elif option.id == "dmarc" %}
+              {% set public_label = "認証失敗時の扱い方" %}
+              {% set public_tech_label = "DMARC" %}
+              {% set public_description = "そのドメインを名乗るメールの認証に失敗したとき、受信側へどう扱ってほしいかを示す方針を見ます。" %}
+              {% elif option.id == "tls" %}
+              {% set public_label = "HTTPS の入口で見える証明書" %}
+              {% set public_tech_label = "TLS certificate" %}
+              {% set public_description = "HTTPS で接続を始めるときに見える証明書の情報を見ます。サイト全体の安全性を保証するものではありません。" %}
+              {% elif option.id == "http2" %}
+              {% set public_label = "Web 応答と HTTP の情報" %}
+              {% set public_tech_label = "HTTP/2 / HTTP Status" %}
+              {% set public_description = "Web サーバーから返る HTTP の情報を見ます。HTTP Status は HTTP/2 専用ではなく、HTTP 応答一般の手がかりです。" %}
+              {% elif option.id == "ip_preference" %}
+              {% set public_label = "IPv4 / IPv6 の住所" %}
+              {% set public_tech_label = "A / AAAA" %}
+              {% set public_description = "DNS 上で IPv4 と IPv6 の住所が見つかるかを見ます。接続成功や常時利用を保証するものではありません。" %}
+              {% else %}
+              {% set public_label = option.label %}
+              {% set public_tech_label = option.label %}
+              {% set public_description = option.description %}
+              {% endif %}
+              <input type="checkbox" name="checks" value="{{ option.id }}" data-label="{{ public_label }}"{% if option.default_selected %} checked{% endif %}>
+              <span class="multi-option-badge {{ option.category }}">{{ option.category_label }}</span>
+              <strong>{{ public_label }}</strong>
+              <small>{{ public_tech_label }} / {{ public_description }}</small>
+            </label>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="multi-scope-note" aria-label="Batch scope note">
+          <p>
+            このページではドメイン名を対象に、見えた範囲の情報だけをまとめます。IPアドレスやURLを直接入力する確認は、別のページで扱う予定です。
+            <span class="multi-ja">This page is for domain names. IP-address and URL-based checks are handled separately.</span>
+          </p>
+        </section>
+      </form>
+    </section>
+  </section>
+</section>
+
+<script src="{{ base_path }}/static/multi_check.js?v=20260707-public-formatter-copy"></script>
+{% endblock %}

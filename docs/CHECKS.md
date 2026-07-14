@@ -1,150 +1,85 @@
-﻿# Checks
-
-## Overview
-
-Network Check provides lightweight public network diagnostic checks.
-
-Each check is intended to be read-only and externally observable.
+# Checks
 
 ## Client Information
 
-Purpose:
-
-- display client IP version
-- display User-Agent
-- display Accept-Language
-
-Route:
-
-- /
+- Purpose: show the client IPv4 / IPv6 information visible to the application.
+- Route: / and related public pages.
+- Boundary: displays request-visible information only.
 
 ## Domain Check
 
-Purpose:
-
-- resolve DNS A records
-- resolve DNS AAAA records
-- classify IPv4-only, IPv6-only, dual-stack, or unavailable state
-
-Route:
-
-- /domain
-
-## TLS Check
-
-Purpose:
-
-- connect to port 443
-- display negotiated TLS version
-- display cipher information
-
-Route:
-
-- /tls
-
-Boundary:
-
-- no vulnerability scan
-- no certificate attack testing
-- no broad port probing
-
-## HTTP/2 Check
-
-Purpose:
-
-- check HTTP/2 negotiation
-- display HTTP status code
-- display final URL after redirects
-
-Route:
-
-- /http2
-
-Boundary:
-
-- uses runtime HTTP client capability
-- does not crawl the site
+- Purpose: resolve DNS A, AAAA, CNAME, NS, and SOA records.
+- Route: /domain.
+- Boundary: DNS lookup only; no remote system change.
 
 ## DNS Timing
 
-Purpose:
-
-- measure DNS A response timing
-- measure DNS AAAA response timing
-- display timing in milliseconds
-
-Route:
-
-- /dns-timing
-
-Boundary:
-
-- timing values are runtime reference values
-- timing values are not full performance benchmarks
+- Purpose: measure DNS response timing.
+- Route: /dns-timing.
+- Boundary: DNS timing only.
 
 ## IPv4 / IPv6 Preference
 
-Purpose:
+- Purpose: classify IPv4-only, IPv6-only, and dual-stack availability.
+- Route: /ip-preference.
+- Boundary: uses observable DNS/address behavior.
 
-- inspect A and AAAA availability
-- classify IP version availability
+## TLS Check
 
-Route:
+- Purpose: show TLS negotiation and certificate information.
+- Route: /tls.
+- Boundary: uses the standard TLS port only; validates that the resolved destination is public before connection; not a vulnerability scan.
 
-- /ip-preference
+## HTTP/2 Check
 
-Boundary:
-
-- based on DNS record availability
-- does not measure real browser route selection
+- Purpose: show HTTP/2 negotiation visibility.
+- Route: /http2.
+- Boundary: validates that the resolved destination is public before connection; checks negotiation through runtime curl capability; displays the effective requested URL; does not automatically follow redirects; does not crawl.
 
 ## MX Check
 
-Purpose:
-
-- resolve MX records
-- display priority
-- display mail exchanger host
-
-Route:
-
-- /mx
-
-Boundary:
-
-- no SMTP connection test
-- no mail sending test
-- no authentication test
+- Purpose: show mail exchanger records.
+- Route: /mx.
+- Boundary: DNS lookup only; no SMTP authentication test and no mail sending.
 
 ## SPF Check
 
-Purpose:
-
-- resolve TXT records
-- extract records starting with v=spf1
-
-Route:
-
-- /spf
-
-Boundary:
-
-- does not fully evaluate SPF policy
-- does not send mail
+- Purpose: show SPF-related DNS TXT policy.
+- Route: /spf.
+- Boundary: DNS lookup only.
 
 ## DMARC Check
 
-Purpose:
+- Purpose: show DMARC policy records.
+- Route: /dmarc.
+- Boundary: DNS lookup only.
 
-- resolve TXT records for _dmarc domain
-- extract records starting with v=DMARC1
+## PTR Check
 
-Route:
+- Purpose: show PTR reverse lookup information.
+- Route: /ptr.
+- Boundary: reverse DNS lookup only.
 
-- /dmarc
+## CAA Check
 
-Boundary:
+- Purpose: show CAA records.
+- Route: /caa.
+- Boundary: DNS lookup only.
 
-- does not fully evaluate DMARC policy
-- does not send mail
-- does not test report delivery
+## Security Headers Check
+
+- Purpose: show selected HTTP Security Headers.
+- Route: /security-headers.
+- Boundary: accepts public HTTP/HTTPS URL only; rejects embedded credentials; rejects non-default port; rejects localhost, private, reserved, and non-public target before connection; does not automatically follow redirects; displays selected response headers only.
+
+## Domain Multi Check
+
+- Purpose: combine selected domain checks.
+- Route: /multi-check.
+- Boundary: preserves each individual result boundary; excludes PTR input and URL-based Security Headers input.
+
+## Public Explanation Pages
+
+- Purpose: provide public explanation content for checks.
+- Route: public explanation routes.
+- Boundary: documentation content only.

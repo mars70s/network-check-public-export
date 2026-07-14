@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Domain Multi Check / ドメイン一括確認{% endblock %}
+{% block content %}
+<section class="multi-page-shell">
+  <section class="multi-hero">
+    <div class="multi-hero-copy">
+      <p class="eyebrow">Domain Multi Check</p>
+      <h1>Domain Multi Check</h1>
+      <p class="lead">
+        Run multiple configuration checks for the entered domain and review the results in one place.
+        <span class="multi-ja">入力したドメインに関する複数の設定項目をまとめてチェックし、結果を一覧で確認できます。</span>
+      </p>
+      <div class="multi-scope-row" aria-label="Current scope">
+        <span>Domain check batch</span>
+        <strong>Domain-focused checks</strong>
+        <em class="multi-ja">この一括確認では、入力したドメインを対象にしたチェックのみを実行します。</em>
+      </div>
+    </div>
+    <div class="multi-hero-card">
+      <span class="multi-mini-label">Batch UI</span>
+      <strong>One domain, selected checks, one response.</strong>
+      <p>
+        Use the <a href="{{ base_path }}/checks">Diagnostic Tools</a> list for checks that need a different input type.
+        <span class="multi-ja">入力形式が異なるチェックは<a href="{{ base_path }}/checks">診断一覧</a>から選択できます。</span>
+      </p>
+    </div>
+  </section>
+
+  <section class="multi-dashboard">
+    <form id="multi-check-form" class="multi-form" data-api-url="{{ base_path }}/api/multi-check/run">
+      <section class="multi-control-card">
+        <div class="multi-control-heading">
+          <div>
+            <p class="multi-kicker">Target</p>
+            <h2>Domain Input <small>ドメイン入力</small></h2>
+          </div>
+          <span class="multi-soft-pill">example.com</span>
+        </div>
+        <label for="multi-check-domain">Domain name <small>ドメイン名</small></label>
+        <p class="multi-field-helper">
+          Enter one public domain to check.
+          <span class="multi-ja">確認したい公開ドメインを1つ入力してください。</span>
+        </p>
+        <div class="multi-domain-row">
+          <input id="multi-check-domain" name="domain" type="text" placeholder="example.com" autocomplete="off" required>
+          <button class="multi-primary-action" type="submit">Run Selected Checks</button>
+        </div>
+        <p class="multi-action-helper">
+          Runs the selected checks as one batch response.
+          <span class="multi-ja">選択したチェックを実行します。</span>
+        </p>
+      </section>
+    <section class="multi-status-panel" aria-live="polite">
+      <div>
+        <p class="multi-kicker">Batch Status</p>
+        <p id="multi-check-status">
+          <span>Select one or more checks, then run the batch.</span>
+          <span class="multi-ja">1つ以上のチェックを選択してから実行してください。</span>
+        </p>
+        <p id="multi-check-summary" class="multi-status-summary"></p>
+      </div>
+      <div class="multi-clear-actions" hidden>
+        <button id="multi-check-clear" class="multi-secondary-action" type="button" hidden>Clear Results</button>
+        <p class="multi-clear-helper">
+          Clear displayed cards.
+          <span class="multi-ja">表示された結果をクリアします。</span>
+        </p>
+      </div>
+    </section>
+
+    <section id="multi-check-results" class="multi-results-grid" aria-live="polite"></section>
+
+
+      <section class="multi-control-card">
+        <div class="multi-control-heading">
+          <div>
+            <p class="multi-kicker">Selection</p>
+            <h2>Supported Checks <small>対応チェック</small></h2>
+          </div>
+          <span class="multi-soft-pill">{{ multi_check_options|length }} available</span>
+        </div>
+        <div class="multi-check-grid" aria-label="Supported checks">
+          {% set category_group = namespace(label="") %}
+          {% for option in multi_check_options %}
+          {% if option.category_label != category_group.label %}
+          {% set category_group.label = option.category_label %}
+          <div class="multi-check-category-heading">
+            <h3>{{ option.category_label }}</h3>
+          </div>
+          {% endif %}
+          <label class="multi-check-option">
+            <input type="checkbox" name="checks" value="{{ option.id }}" data-label="{{ option.label }}"{% if option.default_selected %} checked{% endif %}>
+            <span class="multi-option-badge {{ option.category }}">{{ option.category_label }}</span>
+            <strong>{{ option.label }}</strong>
+            <small>{{ option.description }}</small>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+
+  <section class="multi-scope-note" aria-label="Batch scope note">
+    <p>
+      Checks that require an IP address or full URL, such as <a href="{{ base_path }}/ptr">PTR Check</a>
+      and <a href="{{ base_path }}/security-headers">Security Headers</a>, are not included in this domain-based batch.
+      <span class="multi-ja">
+        IPアドレスやURLを直接入力するチェック（<a href="{{ base_path }}/ptr">PTR Check</a>、<a href="{{ base_path }}/security-headers">Security Headers</a> など）は、このドメイン一括確認には含めていません。
+      </span>
+    </p>
+  </section>
+    </form>
+
+
+  </section>
+
+  <section class="multi-note-panel">
+    <h2>Safety Boundary <small>安全上の範囲</small></h2>
+    <p>
+      This page runs selected lightweight domain-based checks for one user-entered domain. It does not perform PTR lookup, Security Headers URL checks, port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.
+      <span class="multi-ja">このページは、入力された1つのドメインに対して軽量なドメイン系チェックだけを実行します。PTR、Security Headers、ポートスキャン、脆弱性診断、不正アクセス、評判スコア、または大量クロールは行いません。</span>
+    </p>
+  </section>
+</section>
+
+<script src="{{ base_path }}/static/multi_check.js"></script>
+{% endblock %}

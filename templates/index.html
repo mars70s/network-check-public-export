@@ -4,7 +4,7 @@
 <section class="hero">
   <p class="eyebrow">Network Check</p>
   <h1>Check Your Network<span>あなたのネット環境を確認</span></h1>
-  <p class="lead">This page shows your IP address, IPv4/IPv6 status, browser information, language settings, time zone, and screen size.<br>IPアドレス、IPv4/IPv6、ブラウザ情報、言語設定、タイムゾーン、画面サイズをわかりやすく表示します。</p>
+  <p class="lead">This page shows your IP address, IPv4/IPv6 status, current page protocol, browser information, language settings, time zone, and screen size.<br>IPアドレス、IPv4/IPv6、現在のページ接続プロトコル、ブラウザ情報、言語設定、タイムゾーン、画面サイズをわかりやすく表示します。</p>
 </section>
 
 <section class="grid">
@@ -17,6 +17,11 @@
     <h2>IP Version <small>IP種別</small></h2>
     <p class="badge">{{ data.ip_version }}</p>
     <p class="hint">IPv4 is the older format. IPv6 is the newer format with a much larger address space.<br>IPv4は従来型、IPv6は新しい形式のIPアドレスです。</p>
+  </article>
+  <article class="card">
+    <h2>Current Page Protocol <small>現在のページ接続プロトコル</small></h2>
+    <p id="current-protocol" class="mono">Loading... / 取得中...</p>
+    <p class="hint">The actual protocol observed by your browser when loading this page.<br>このページを読み込んだときにブラウザ側で観測された接続プロトコルです。</p>
   </article>
   <article class="card">
     <h2>Language Settings <small>言語設定</small></h2>
@@ -39,64 +44,11 @@
     <p class="hint">A browser string often used to identify browser and OS type.<br>ブラウザやOSの種類を推定するために使われる文字列です。</p>
   </article>
 
-<section class="card wide">
-  <h2>Available Tools <small>利用できる診断機能</small></h2>
-
-  <div class="tool-grid">
-
-    <a class="tool-card" href="{{ base_path }}/domain">
-      <strong>Domain Check</strong>
-      <span>DNS records and domain information</span>
-    </a>
-
-    <a class="tool-card" href="{{ base_path }}/tls">
-      <strong>TLS Check</strong>
-      <span>TLS version and cipher inspection</span>
-    </a>
-
-    <a class="tool-card" href="{{ base_path }}/http2">
-      <strong>HTTP/2 Check</strong>
-      <span>HTTP/2 negotiation verification</span>
-    </a>
-
-    <a class="tool-card" href="{{ base_path }}/dns-timing">
-      <strong>DNS Timing</strong>
-      <span>DNS A / AAAA response timing</span>
-    </a>
-
-    <a class="tool-card" href="{{ base_path }}/ip-preference">
-      <strong>IP Preference</strong>
-      <span>IPv4 / IPv6 availability analysis</span>
-    </a>
-    <a class="tool-card" href="{{ base_path }}/mx">
-      <strong>MX Check</strong>
-      <span>Mail exchanger DNS record check</span>
-    </a>
-    <a class="tool-card" href="{{ base_path }}/spf">
-      <strong>SPF Check</strong>
-      <span>Sender policy TXT record check</span>
-    </a>
-    <a class="tool-card" href="{{ base_path }}/dmarc">
-      <strong>DMARC Check</strong>
-      <span>Mail authentication policy record check</span>
-    </a>
-
-  </div>
-</section>
-
 </section>
 
 <section class="note">
   <h2>What this page tells you <small>このページでわかること</small></h2>
-  <p>This page is a simple self-check tool. It helps you understand whether your current connection is using IPv4 or IPv6, and what basic information your browser sends to websites.<br>このページは、自分の通信がIPv4かIPv6か、ブラウザがどんな基本情報を送っているかを確認するためのシンプルなページです。</p>
+  <p>This page shows basic information about your current connection, including your IP address, IP version, browser, language settings, time zone, and screen size.<br>このページでは、現在の接続元IP、IP種別、ブラウザ情報、言語設定、タイムゾーン、画面サイズなど、接続に関する基本情報を確認できます。</p>
 </section>
-<script src="/static/app.js"></script>
+<script src="{{ base_path }}/static/app.js"></script>
 {% endblock %}
-
-
-
-
-
-
-
-

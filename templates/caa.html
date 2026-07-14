@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}CAA Check / CAA確認{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">CAA Check</p>
+  <h1>CAA Check<span>証明書発行許可を確認</span></h1>
+  <p class="lead">Enter a domain name to check its DNS CAA records.<br>ドメイン名を入力すると、DNS CAAレコードを確認します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/caa" class="domain-form">
+    <label for="domain">Domain name<small>ドメイン名</small></label>
+    <div class="form-row">
+      <input id="domain" name="domain" type="text" placeholder="example.com" value="{{ domain_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">Example: google.com. This check only performs a normal DNS CAA query.<br>例: google.com。この確認は通常のDNS CAA問い合わせのみを行います。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>{{ result.domain }} CAA result <small>{{ result.domain }} のCAA結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+
+      <h3>CAA Records <small>CAAレコード</small></h3>
+      {% if result.caa_records %}
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th>Flags<br><small>フラグ</small></th>
+              <th>Tag<br><small>タグ</small></th>
+              <th>Value<br><small>値</small></th>
+              <th>Raw<br><small>原文</small></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in result.caa_records %}
+              <tr>
+                <td>{{ record.flags }}</td>
+                <td>{{ record.tag }}</td>
+                <td>{{ record.value }}</td>
+                <td>{{ record.raw }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">Not found. / 見つかりませんでした。</p>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function only checks DNS CAA records for one user-entered domain. It does not perform certificate issuance, certificate validation, port scanning, vulnerability scanning, unauthorized access, reputation scoring, zone transfer, subdomain enumeration, or bulk crawling.<br>この機能は、利用者が入力した1つのドメインに対するDNS CAAレコード確認のみを行います。証明書発行、証明書検証、ポートスキャン、脆弱性診断、不正アクセス、危険判定、ゾーン転送、サブドメイン列挙、大量クロールは行いません。</p>
+</section>
+{% endblock %}

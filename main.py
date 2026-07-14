@@ -2,20 +2,37 @@ from __future__ import annotations
 
 import os
 import ipaddress
-import re
-import socket
-import ssl
-import time
-import subprocess
 
 from typing import Any
 
-import dns.resolver
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+from network_check.checks.caa import check_caa
+from network_check.checks.dns import check_domain
+from network_check.checks.dns_timing import check_dns_timing
+from network_check.checks.http2 import check_http2
+from network_check.checks.ip_preference import check_ip_preference
+from network_check.checks.mail import (
+    check_dmarc_records,
+    check_mx_records,
+    check_spf_records,
+)
+from network_check.checks.ptr import check_ptr
+from network_check.checks.security_headers import check_security_headers
+from network_check.checks.tls import check_tls
+from network_check.public_explanations import (
+    get_public_explanation,
+    guide_explanation_items,
+)
+from network_check.usage_metrics import (
+    get_usage_dashboard,
+    record_usage_event,
+    usage_metrics_status,
+)
 
 app = FastAPI(title="Network Check", description="Simple IPv4/IPv6 and DNS A/AAAA check site.")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -28,7 +45,141 @@ PUBLIC_BASE_PATH = os.getenv("PUBLIC_BASE_PATH", "")
 CONTACT_NAME = os.getenv("CONTACT_NAME", "Network Check Project")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "contact@example.com")
 
-DOMAIN_RE = re.compile(r"^(?=.{1,253}$)(?!-)([A-Za-z0-9-]{1,63}\.)+[A-Za-z]{2,63}\.?$")
+
+CHECK_DEFINITIONS: list[dict[str, Any]] = [
+    {
+        "id": "domain",
+        "label": "Domain",
+        "category": "dns",
+        "category_label": "DNS",
+        "description": "A / AAAA / CNAME / NS / SOA",
+        "default_selected": True,
+        "multi_check": True,
+        "ui_order": 10,
+        "function": check_domain,
+    },
+    {
+        "id": "ip_preference",
+        "label": "IP Preference",
+        "category": "ip",
+        "category_label": "IP",
+        "description": "IPv4 / IPv6 availability",
+        "default_selected": True,
+        "multi_check": True,
+        "ui_order": 90,
+        "function": check_ip_preference,
+    },
+    {
+        "id": "dns_timing",
+        "label": "DNS Timing",
+        "category": "dns",
+        "category_label": "DNS",
+        "description": "A / AAAA response timing",
+        "default_selected": False,
+        "multi_check": True,
+        "ui_order": 20,
+        "function": check_dns_timing,
+    },
+    {
+        "id": "tls",
+        "label": "TLS",
+        "category": "web",
+        "category_label": "WEB",
+        "description": "Certificate and cipher",
+        "default_selected": False,
+        "multi_check": True,
+        "ui_order": 70,
+        "function": check_tls,
+    },
+    {
+        "id": "http2",
+        "label": "HTTP/2",
+        "category": "web",
+        "category_label": "WEB",
+        "description": "HTTPS negotiation",
+        "default_selected": False,
+        "multi_check": True,
+        "ui_order": 80,
+        "function": check_http2,
+    },
+    {
+        "id": "mx",
+        "label": "MX",
+        "category": "mail",
+        "category_label": "MAIL",
+        "description": "Mail exchanger records",
+        "default_selected": True,
+        "multi_check": True,
+        "ui_order": 40,
+        "function": check_mx_records,
+    },
+    {
+        "id": "spf",
+        "label": "SPF",
+        "category": "mail",
+        "category_label": "MAIL",
+        "description": "Sender policy TXT",
+        "default_selected": True,
+        "multi_check": True,
+        "ui_order": 50,
+        "function": check_spf_records,
+    },
+    {
+        "id": "dmarc",
+        "label": "DMARC",
+        "category": "mail",
+        "category_label": "MAIL",
+        "description": "Mail authentication policy",
+        "default_selected": True,
+        "multi_check": True,
+        "ui_order": 60,
+        "function": check_dmarc_records,
+    },
+    {
+        "id": "caa",
+        "label": "CAA",
+        "category": "dns",
+        "category_label": "DNS",
+        "description": "Certificate authority policy",
+        "default_selected": False,
+        "multi_check": True,
+        "ui_order": 30,
+        "function": check_caa,
+    },
+]
+
+MULTI_CHECK_DEFINITIONS = [
+    definition for definition in CHECK_DEFINITIONS if definition["multi_check"]
+]
+
+MULTI_CHECK_FUNCTIONS = {
+    str(definition["id"]): definition["function"]
+    for definition in MULTI_CHECK_DEFINITIONS
+}
+
+MULTI_CHECK_ORDER = [
+    str(definition["id"]) for definition in MULTI_CHECK_DEFINITIONS
+]
+
+
+def multi_check_ui_options() -> list[dict[str, Any]]:
+    public_fields = (
+        "id",
+        "label",
+        "category",
+        "category_label",
+        "description",
+        "default_selected",
+        "ui_order",
+    )
+    return [
+        {field: definition[field] for field in public_fields}
+        for definition in sorted(
+            MULTI_CHECK_DEFINITIONS,
+            key=lambda definition: int(definition["ui_order"]),
+        )
+    ]
+
 
 def template_context(request: Request, page: str, **extra: Any) -> dict[str, Any]:
     context: dict[str, Any] = {
@@ -42,6 +193,13 @@ def template_context(request: Request, page: str, **extra: Any) -> dict[str, Any
     context.update(extra)
     return context
 
+
+def public_template_context(request: Request, page: str, **extra: Any) -> dict[str, Any]:
+    context = template_context(request, page, public_path="/network-check")
+    context.update(extra)
+    return context
+
+
 def get_client_ip(request: Request) -> str:
     xff = request.headers.get("x-forwarded-for")
     if xff:
@@ -51,6 +209,7 @@ def get_client_ip(request: Request) -> str:
         return xri.strip()
     return request.client.host if request.client else "unknown"
 
+
 def ip_version(ip: str) -> str:
     try:
         parsed = ipaddress.ip_address(ip)
@@ -58,92 +217,6 @@ def ip_version(ip: str) -> str:
     except ValueError:
         return "Unknown / 不明"
 
-def normalize_domain(domain: str) -> str:
-    domain = domain.strip().removeprefix("http://").removeprefix("https://")
-    domain = domain.split("/")[0].split(":")[0]
-    return domain.lower().rstrip(".")
-
-def resolve_records(domain: str, record_type: str) -> list[str]:
-    resolver = dns.resolver.Resolver()
-    resolver.lifetime = 3.0
-    resolver.timeout = 2.0
-    try:
-        answers = resolver.resolve(domain, record_type)
-        return sorted({answer.to_text() for answer in answers})
-    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.exception.Timeout):
-        return []
-    except Exception:
-        return []
-
-def check_domain(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {"ok": False, "domain": normalized, "error": "Invalid domain format. / ドメイン名の形式が正しくありません。"}
-    a_records = resolve_records(normalized, "A")
-    aaaa_records = resolve_records(normalized, "AAAA")
-    if a_records and aaaa_records:
-        status = "Dual-stack: IPv4 and IPv6 / IPv4・IPv6 両対応"
-        message = "This domain has both A and AAAA records. / このドメインはIPv4とIPv6の両方のDNSレコードを持っています。"
-        level = "good"
-    elif a_records and not aaaa_records:
-        status = "IPv4 only / IPv4のみ対応"
-        message = "A records were found, but no AAAA records were found. / Aレコードはありますが、AAAAレコードは見つかりませんでした。"
-        level = "warn"
-    elif not a_records and aaaa_records:
-        status = "IPv6 only / IPv6のみ対応"
-        message = "AAAA records were found, but no A records were found. / AAAAレコードはありますが、Aレコードは見つかりませんでした。"
-        level = "good"
-    else:
-        status = "No web DNS records found / Web用DNSレコード未検出"
-        message = "No A or AAAA records were found. The domain may be mistyped or use a special configuration. / A・AAAAレコードが見つかりませんでした。入力ミスや特殊な構成の可能性があります。"
-        level = "bad"
-    return {"ok": True, "domain": normalized, "a_records": a_records, "aaaa_records": aaaa_records, "status": status, "message": message, "level": level}
-
-
-def check_tls(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": "Invalid domain format. / ドメイン名の形式が正しくありません。",
-        }
-
-    try:
-        context = ssl.create_default_context()
-        with socket.create_connection((normalized, 443), timeout=5) as sock:
-            with context.wrap_socket(sock, server_hostname=normalized) as tls_sock:
-                tls_version = tls_sock.version()
-                cipher = tls_sock.cipher()
-
-        if tls_version == "TLSv1.3":
-            level = "good"
-            status = "Modern TLS / 新しいTLS"
-        elif tls_version == "TLSv1.2":
-            level = "warn"
-            status = "TLS 1.2 / TLS 1.2"
-        else:
-            level = "bad"
-            status = "Legacy TLS / 古いTLS"
-
-        return {
-            "ok": True,
-            "domain": normalized,
-            "tls_version": tls_version,
-            "cipher": cipher[0] if cipher else "Unknown",
-            "cipher_protocol": cipher[1] if cipher else "Unknown",
-            "cipher_bits": cipher[2] if cipher else "Unknown",
-            "status": status,
-            "level": level,
-        }
-
-    except Exception as exc:
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": f"TLS connection failed. / TLS接続に失敗しました: {exc}",
-        }
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
@@ -156,95 +229,206 @@ async def index(request: Request) -> HTMLResponse:
     }
     return templates.TemplateResponse("index.html", template_context(request, "home", data=data))
 
+
+@app.get("/checks", response_class=HTMLResponse)
+async def checks(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("checks.html", template_context(request, "checks"))
+
+
+@app.get("/multi-check", response_class=HTMLResponse)
+async def multi_check_get(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "multi_check.html",
+        template_context(
+            request,
+            "multi_check",
+            multi_check_options=multi_check_ui_options(),
+        ),
+    )
+
+
+@app.get("/network-check/", response_class=HTMLResponse)
+async def public_network_check(request: Request) -> HTMLResponse:
+    record_usage_event("public_page_view", "network_check_home")
+    return templates.TemplateResponse(
+        "public_network_check.html",
+        public_template_context(
+            request,
+            "public_network_check",
+            multi_check_options=multi_check_ui_options(),
+        ),
+    )
+
+
+
+@app.get("/network-check/guide/", response_class=HTMLResponse)
+async def public_explanation_guide(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "public_explanation_guide.html",
+        public_template_context(
+            request,
+            "public_explanation_guide",
+            guide_items=guide_explanation_items(),
+        ),
+    )
+
+
+@app.get("/network-check/{slug}/", response_class=HTMLResponse)
+async def public_explanation(request: Request, slug: str) -> HTMLResponse:
+    explanation = get_public_explanation(slug)
+    if explanation is None:
+        raise HTTPException(status_code=404)
+    return templates.TemplateResponse(
+        "public_explanation.html",
+        public_template_context(
+            request,
+            "public_explanation",
+            explanation=explanation,
+        ),
+    )
+
+
+@app.post("/api/multi-check/run")
+async def multi_check_run(request: Request) -> dict[str, Any]:
+    try:
+        payload = await request.json()
+    except Exception:
+        return {
+            "ok": False,
+            "error": "Invalid request.",
+            "results": {},
+            "errors": {},
+        }
+
+    domain = payload.get("domain") if isinstance(payload, dict) else None
+    checks = payload.get("checks") if isinstance(payload, dict) else None
+
+    if not isinstance(domain, str) or not domain.strip() or not isinstance(checks, list):
+        return {
+            "ok": False,
+            "error": "Invalid request.",
+            "results": {},
+            "errors": {},
+        }
+
+    selected_checks = []
+    invalid_checks = []
+    for check_id in checks:
+        if not isinstance(check_id, str) or check_id not in MULTI_CHECK_FUNCTIONS:
+            invalid_checks.append(check_id)
+            continue
+        if check_id not in selected_checks:
+            selected_checks.append(check_id)
+
+    if invalid_checks or not selected_checks:
+        return {
+            "ok": False,
+            "domain": domain.strip(),
+            "error": "Invalid request.",
+            "results": {},
+            "errors": {
+                "checks": "Unknown or unsupported check id.",
+            },
+        }
+
+    record_usage_event("multi_check_run", "all")
+    for check_id in selected_checks:
+        record_usage_event("multi_check_selected", check_id)
+
+    results: dict[str, dict[str, Any]] = {}
+    errors: dict[str, str] = {}
+
+    for check_id in MULTI_CHECK_ORDER:
+        if check_id not in selected_checks:
+            continue
+        check_function = MULTI_CHECK_FUNCTIONS[check_id]
+        try:
+            result = check_function(domain)
+            results[check_id] = {
+                "ok": bool(result.get("ok")),
+                "result": result,
+            }
+        except Exception as exc:
+            error_result = {
+                "ok": False,
+                "domain": domain.strip(),
+                "error": str(exc),
+            }
+            results[check_id] = {
+                "ok": False,
+                "result": error_result,
+            }
+            errors[check_id] = str(exc)
+
+    return {
+        "ok": True,
+        "domain": domain.strip(),
+        "results": results,
+        "errors": errors,
+    }
+
+
 @app.get("/domain", response_class=HTMLResponse)
 async def domain_get(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("domain.html", template_context(request, "domain", result=None, domain_input=""))
+
 
 @app.post("/domain", response_class=HTMLResponse)
 async def domain_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
     return templates.TemplateResponse("domain.html", template_context(request, "domain", result=check_domain(domain), domain_input=domain))
 
+
+@app.get("/caa", response_class=HTMLResponse)
+async def caa_get(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("caa.html", template_context(request, "caa", result=None, domain_input=""))
+
+
+@app.post("/caa", response_class=HTMLResponse)
+async def caa_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
+    return templates.TemplateResponse("caa.html", template_context(request, "caa", result=check_caa(domain), domain_input=domain))
+
+
+@app.get("/security-headers", response_class=HTMLResponse)
+async def security_headers_get(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "security_headers.html",
+        template_context(request, "security_headers", result=None, url_input=""),
+    )
+
+
+@app.post("/security-headers", response_class=HTMLResponse)
+async def security_headers_post(request: Request, url: str = Form(...)) -> HTMLResponse:
+    result = check_security_headers(url)
+    return templates.TemplateResponse(
+        "security_headers.html",
+        template_context(request, "security_headers", result=result, url_input=url),
+    )
+
+
+@app.get("/ptr", response_class=HTMLResponse)
+async def ptr_get(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("ptr.html", template_context(request, "ptr", result=None, ip_input=""))
+
+
+@app.post("/ptr", response_class=HTMLResponse)
+async def ptr_post(request: Request, ip_input: str = Form(...)) -> HTMLResponse:
+    return templates.TemplateResponse("ptr.html", template_context(request, "ptr", result=check_ptr(ip_input), ip_input=ip_input))
+
+
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("privacy.html", template_context(request, "privacy"))
+
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("terms.html", template_context(request, "terms"))
 
+
 @app.get("/contact", response_class=HTMLResponse)
 async def contact(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("contact.html", template_context(request, "contact"))
 
-
-
-def check_http2(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": "Invalid domain format. / ドメイン名の形式が正しくありません。",
-        }
-
-    try:
-        version_result = subprocess.run(
-            ["curl", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-
-        if "HTTP2" not in version_result.stdout:
-            return {
-                "ok": True,
-                "domain": normalized,
-                "available": False,
-                "status": "HTTP/2 check unavailable on this runtime. / この実行環境ではHTTP/2確認を利用できません。",
-                "level": "warn",
-            }
-
-        target_url = f"https://{normalized}/"
-
-        result = subprocess.run(
-            ["curl", "-I", "--http2", "-L", "-s", "-o", "NUL", "-w", "%{http_version} %{http_code} %{url_effective}", target_url],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-
-        output = result.stdout.strip()
-        parts = output.split(" ", 2)
-
-        http_version = parts[0] if len(parts) > 0 else "unknown"
-        status_code = parts[1] if len(parts) > 1 else "unknown"
-        final_url = parts[2] if len(parts) > 2 else target_url
-
-        if http_version == "2":
-            level = "good"
-            status = "HTTP/2 negotiated. / HTTP/2で接続されました。"
-        else:
-            level = "warn"
-            status = "HTTP/2 was not negotiated. / HTTP/2では接続されませんでした。"
-
-        return {
-            "ok": True,
-            "available": True,
-            "domain": normalized,
-            "http_version": http_version,
-            "status_code": status_code,
-            "final_url": final_url,
-            "status": status,
-            "level": level,
-        }
-
-    except Exception as exc:
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": f"HTTP/2 check failed. / HTTP/2確認に失敗しました: {exc}",
-        }
 
 @app.get("/tls", response_class=HTMLResponse)
 async def tls_get(request: Request) -> HTMLResponse:
@@ -263,79 +447,6 @@ async def tls_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
     )
 
 
-
-def timed_resolve_records(domain: str, record_type: str) -> dict[str, Any]:
-    resolver = dns.resolver.Resolver()
-    resolver.lifetime = 3.0
-    resolver.timeout = 2.0
-
-    started = time.perf_counter()
-    try:
-        answers = resolver.resolve(domain, record_type)
-        elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
-        return {
-            "ok": True,
-            "record_type": record_type,
-            "records": sorted({answer.to_text() for answer in answers}),
-            "elapsed_ms": elapsed_ms,
-            "error": None,
-        }
-    except (
-        dns.resolver.NoAnswer,
-        dns.resolver.NXDOMAIN,
-        dns.resolver.NoNameservers,
-        dns.exception.Timeout,
-    ) as exc:
-        elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
-        return {
-            "ok": False,
-            "record_type": record_type,
-            "records": [],
-            "elapsed_ms": elapsed_ms,
-            "error": str(exc),
-        }
-    except Exception as exc:
-        elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
-        return {
-            "ok": False,
-            "record_type": record_type,
-            "records": [],
-            "elapsed_ms": elapsed_ms,
-            "error": str(exc),
-        }
-
-
-def check_dns_timing(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": "Invalid domain format. / ドメイン名の形式が正しくありません。",
-        }
-
-    a_result = timed_resolve_records(normalized, "A")
-    aaaa_result = timed_resolve_records(normalized, "AAAA")
-
-    has_any_record = bool(a_result["records"] or aaaa_result["records"])
-
-    if has_any_record:
-        level = "good"
-        status = "DNS response timing completed. / DNS応答時間を確認しました。"
-    else:
-        level = "warn"
-        status = "No A or AAAA records found. / AまたはAAAAレコードが見つかりませんでした。"
-
-    return {
-        "ok": True,
-        "domain": normalized,
-        "a_result": a_result,
-        "aaaa_result": aaaa_result,
-        "status": status,
-        "level": level,
-    }
-
 @app.get("/http2", response_class=HTMLResponse)
 async def http2_get(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -352,57 +463,6 @@ async def http2_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
         template_context(request, "http2", result=result, domain_input=domain),
     )
 
-
-
-def check_ip_preference(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": "Invalid domain format. / ドメイン名の形式が正しくありません。",
-        }
-
-    a_records = resolve_records(normalized, "A")
-    aaaa_records = resolve_records(normalized, "AAAA")
-
-    has_ipv4 = bool(a_records)
-    has_ipv6 = bool(aaaa_records)
-
-    if has_ipv4 and has_ipv6:
-        level = "good"
-        status = "Dual-stack / IPv4・IPv6 両対応"
-        summary = "This domain publishes both A and AAAA records. / このドメインはAレコードとAAAAレコードの両方を公開しています。"
-        preference = "IPv4 and IPv6 available / IPv4・IPv6利用可能"
-    elif has_ipv4 and not has_ipv6:
-        level = "warn"
-        status = "IPv4 only / IPv4のみ"
-        summary = "This domain publishes A records but no AAAA records. / このドメインはAレコードを公開していますが、AAAAレコードは公開していません。"
-        preference = "IPv4 preferred by availability / 利用可能性ではIPv4優先"
-    elif not has_ipv4 and has_ipv6:
-        level = "good"
-        status = "IPv6 only / IPv6のみ"
-        summary = "This domain publishes AAAA records but no A records. / このドメインはAAAAレコードを公開していますが、Aレコードは公開していません。"
-        preference = "IPv6 preferred by availability / 利用可能性ではIPv6優先"
-    else:
-        level = "bad"
-        status = "No A or AAAA records / A・AAAAレコードなし"
-        summary = "No A or AAAA records were found. / AレコードまたはAAAAレコードが見つかりませんでした。"
-        preference = "No IP version preference can be determined. / IPバージョン優先状況は判定できません。"
-
-    return {
-        "ok": True,
-        "domain": normalized,
-        "a_records": a_records,
-        "aaaa_records": aaaa_records,
-        "has_ipv4": has_ipv4,
-        "has_ipv6": has_ipv6,
-        "status": status,
-        "summary": summary,
-        "preference": preference,
-        "level": level,
-    }
 
 @app.get("/dns-timing", response_class=HTMLResponse)
 async def dns_timing_get(request: Request) -> HTMLResponse:
@@ -438,68 +498,6 @@ async def ip_preference_post(request: Request, domain: str = Form(...)) -> HTMLR
     )
 
 
-def check_mx_records(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": "Invalid domain format. / ドメイン名の形式が正しくありません。",
-        }
-
-    try:
-        answers = dns.resolver.resolve(normalized, "MX")
-        records = sorted(
-            [
-                {
-                    "preference": answer.preference,
-                    "exchange": str(answer.exchange).rstrip("."),
-                }
-                for answer in answers
-            ],
-            key=lambda item: (item["preference"], item["exchange"]),
-        )
-
-        if records:
-            return {
-                "ok": True,
-                "domain": normalized,
-                "records": records,
-                "status": "MX records found. / MXレコードが見つかりました。",
-                "level": "good",
-            }
-
-        return {
-            "ok": True,
-            "domain": normalized,
-            "records": [],
-            "status": "No MX records found. / MXレコードが見つかりませんでした。",
-            "level": "warn",
-        }
-
-    except (
-        dns.resolver.NoAnswer,
-        dns.resolver.NXDOMAIN,
-        dns.resolver.NoNameservers,
-        dns.exception.Timeout,
-    ) as exc:
-        return {
-            "ok": True,
-            "domain": normalized,
-            "records": [],
-            "status": "No MX records found. / MXレコードが見つかりませんでした。",
-            "level": "warn",
-            "detail": str(exc),
-        }
-    except Exception as exc:
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": f"MX record check failed. / MXレコード確認に失敗しました: {exc}",
-        }
-
-
 @app.get("/mx", response_class=HTMLResponse)
 async def mx_get(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -515,60 +513,6 @@ async def mx_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
         "mx.html",
         template_context(request, "mx", result=result, domain_input=domain),
     )
-
-
-def check_spf_records(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": "Invalid domain format. / ドメイン名の形式が正しくありません。",
-        }
-
-    try:
-        answers = dns.resolver.resolve(normalized, "TXT")
-        txt_records = [answer.to_text().strip('"') for answer in answers]
-        spf_records = [record for record in txt_records if record.lower().startswith("v=spf1")]
-
-        if spf_records:
-            return {
-                "ok": True,
-                "domain": normalized,
-                "records": spf_records,
-                "status": "SPF record found. / SPFレコードが見つかりました。",
-                "level": "good",
-            }
-
-        return {
-            "ok": True,
-            "domain": normalized,
-            "records": [],
-            "status": "No SPF record found. / SPFレコードが見つかりませんでした。",
-            "level": "warn",
-        }
-
-    except (
-        dns.resolver.NoAnswer,
-        dns.resolver.NXDOMAIN,
-        dns.resolver.NoNameservers,
-        dns.exception.Timeout,
-    ) as exc:
-        return {
-            "ok": True,
-            "domain": normalized,
-            "records": [],
-            "status": "No SPF record found. / SPFレコードが見つかりませんでした。",
-            "level": "warn",
-            "detail": str(exc),
-        }
-    except Exception as exc:
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": f"SPF record check failed. / SPFレコード確認に失敗しました: {exc}",
-        }
 
 
 @app.get("/spf", response_class=HTMLResponse)
@@ -588,66 +532,6 @@ async def spf_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
     )
 
 
-def check_dmarc_records(domain: str) -> dict[str, Any]:
-    normalized = normalize_domain(domain)
-
-    if not normalized or not DOMAIN_RE.match(normalized + "."):
-        return {
-            "ok": False,
-            "domain": normalized,
-            "error": "Invalid domain format. / ドメイン名の形式が正しくありません。",
-        }
-
-    dmarc_domain = f"_dmarc.{normalized}"
-
-    try:
-        answers = dns.resolver.resolve(dmarc_domain, "TXT")
-        txt_records = [answer.to_text().strip('"') for answer in answers]
-        dmarc_records = [record for record in txt_records if record.upper().startswith("V=DMARC1")]
-
-        if dmarc_records:
-            return {
-                "ok": True,
-                "domain": normalized,
-                "query_domain": dmarc_domain,
-                "records": dmarc_records,
-                "status": "DMARC record found. / DMARCレコードが見つかりました。",
-                "level": "good",
-            }
-
-        return {
-            "ok": True,
-            "domain": normalized,
-            "query_domain": dmarc_domain,
-            "records": [],
-            "status": "No DMARC record found. / DMARCレコードが見つかりませんでした。",
-            "level": "warn",
-        }
-
-    except (
-        dns.resolver.NoAnswer,
-        dns.resolver.NXDOMAIN,
-        dns.resolver.NoNameservers,
-        dns.exception.Timeout,
-    ) as exc:
-        return {
-            "ok": True,
-            "domain": normalized,
-            "query_domain": dmarc_domain,
-            "records": [],
-            "status": "No DMARC record found. / DMARCレコードが見つかりませんでした。",
-            "level": "warn",
-            "detail": str(exc),
-        }
-    except Exception as exc:
-        return {
-            "ok": False,
-            "domain": normalized,
-            "query_domain": dmarc_domain,
-            "error": f"DMARC record check failed. / DMARCレコード確認に失敗しました: {exc}",
-        }
-
-
 @app.get("/dmarc", response_class=HTMLResponse)
 async def dmarc_get(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -664,15 +548,27 @@ async def dmarc_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
         template_context(request, "dmarc", result=result, domain_input=domain),
     )
 
+
+@app.get("/usage-metrics", response_class=HTMLResponse)
+async def usage_metrics(request: Request) -> HTMLResponse:
+    metrics_error = None
+    usage_dashboard: dict[str, Any] = {}
+    try:
+        usage_dashboard = get_usage_dashboard()
+    except Exception as exc:
+        metrics_error = str(exc)
+    return templates.TemplateResponse(
+        "usage_metrics.html",
+        template_context(
+            request,
+            "usage_metrics",
+            usage_dashboard=usage_dashboard,
+            metrics_status=usage_metrics_status(),
+            metrics_error=metrics_error,
+        ),
+    )
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
-
-
-
-
-
-
-
-
-

@@ -1,41 +1,62 @@
-﻿# Data Handling
+# Data Handling
 
-## Data Processed
+## Request Data
 
-Network Check may process:
+The application may process the following request-time data:
 
-- submitted domain names
-- DNS query results
-- TLS negotiation results
-- HTTP/2 negotiation results
-- DNS response timing values
-- client IP version visible to the application
-- User-Agent header
-- Accept-Language header
+- Submitted domain.
+- Submitted single IP.
+- Submitted public HTTP/HTTPS URL.
+- DNS results.
+- TLS/HTTP negotiation results.
+- Selected HTTP response headers.
+- DNS response timing.
+- Client request metadata visible to the application.
 
-## Persistent Storage
+## Diagnostic Results
 
-The public design does not require persistent storage of diagnostic results.
+diagnostic results are generated per request.
+They are not stored as submitted-target history.
 
-Diagnostic results should be generated per request and rendered to the user.
+## Aggregate Counter Prohibition
+
+Aggregate records must not store:
+
+- Submitted domains.
+- Submitted IPs.
+- Submitted URLs.
+- Request bodies.
+- Cookies.
+- User-Agent.
+- Client identifiers.
+- Resolved-address lists.
+- diagnostic results.
+
+## Anonymous Aggregate Counters
+
+Runtime may store anonymous daily aggregate counters with these fields:
+
+- Event date.
+- Internal event type.
+- Internal target identifier.
+- Count.
+- Update timestamp.
+
+These aggregate fields do not identify a submitted target or user.
+
+## Runtime Database
+
+The aggregate counter database is runtime data.
+It may use SQLite, but it must not be committed to the public repository.
+It must not be included in release artifacts.
+It must not be published as example diagnostic data.
 
 ## Logs
 
-Production logs are outside the public repository scope.
-
-Do not commit logs to the public repository.
-
-## Submitted Domains
-
-Submitted domains should be treated as request input.
-
-They should not be stored as public repository data or committed as examples unless replaced with placeholders.
+Production logs are outside public repository scope.
+They must not be committed.
 
 ## Example Data
-
-Examples must use synthetic or placeholder values.
-
-Recommended placeholder values:
 
 - example.com
 - example.net
@@ -43,13 +64,13 @@ Recommended placeholder values:
 - 192.0.2.1
 - 2001:db8::1
 
-## Future Storage Requirement
+## Future Data Changes
 
-If future features require storage, document the following before implementation:
+New stored fields require prior documentation of:
 
-- data source
-- storage location
-- retention period
-- redaction policy
-- deletion method
-- repository exclusion rule
+- Source.
+- Fields.
+- Retention.
+- Redaction.
+- Deletion.
+- Repository exclusion.

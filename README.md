@@ -16,7 +16,9 @@ This project focuses on:
 - MX record checking
 - SPF record checking
 - DMARC record checking
+- security response header visibility
 - lightweight public network diagnostics
+- simple dark mode support
 
 本プロジェクトは以下を目的としています。
 
@@ -30,7 +32,9 @@ This project focuses on:
 - MXレコード確認
 - SPFレコード確認
 - DMARCレコード確認
+- セキュリティ関連レスポンスヘッダー表示
 - 軽量ネットワーク診断
+- 簡易ダークモード対応
 
 ---
 
@@ -59,12 +63,18 @@ Network Check running locally.
 
 - DNS A record lookup
 - DNS AAAA record lookup
+- DNS CNAME record lookup
+- DNS NS record lookup
+- DNS SOA record lookup
 - IPv4-only detection
 - IPv6-only detection
 - Dual-stack validation
 
 - DNS A レコード確認
 - DNS AAAA レコード確認
+- DNS CNAME レコード確認
+- DNS NS レコード確認
+- DNS SOA レコード確認
 - IPv4 only 判定
 - IPv6 only 判定
 - Dual-stack 判定
@@ -73,22 +83,28 @@ Network Check running locally.
 
 - Negotiated TLS version display
 - Cipher information display
+- Certificate expiration display
+- Remaining days display
+- Issuer / subject / SAN display
 - Standard TLS connection check on port 443
 
 - 使用された TLS バージョン表示
 - 暗号スイート情報表示
+- 証明書有効期限表示
+- 残り日数表示
+- 発行者 / 対象 / SAN 表示
 - 443番ポートへの通常の TLS 接続確認
 
 ## HTTP/2 Check / HTTP/2確認
 
 - HTTP/2 negotiation check
 - HTTP status code display
-- Final URL display after redirects
+- Automatic redirect following is disabled.
 - Runtime capability fallback when HTTP/2 is unavailable
 
 - HTTP/2 接続確認
 - HTTP ステータスコード表示
-- リダイレクト後の最終 URL 表示
+- 自動リダイレクト追跡は無効です。
 - 実行環境が HTTP/2 非対応の場合の unavailable 表示
 
 ## DNS Timing / DNS応答時間
@@ -145,6 +161,70 @@ Network Check running locally.
 - DMARCレコード抽出
 - v=DMARC1レコード表示
 
+
+## PTR Check / PTR確認
+
+- DNS PTR record lookup
+- IPv4 reverse DNS lookup
+- IPv6 reverse DNS lookup
+- Reverse name display
+- Estimated reverse DNS authority zone display
+- Single IP address input only
+
+- DNS PTRレコード確認
+- IPv4逆引き確認
+- IPv6逆引き確認
+- 逆引き名表示
+- 推定される逆引きDNS管理ゾーン表示
+- 1つのIPアドレスのみ入力
+
+
+## CAA Check / CAA確認
+
+- DNS CAA record lookup
+- Certificate Authority Authorization display
+- issue / issuewild / iodef tag display
+- Flags, tag, value, and raw record display
+- Single domain input only
+
+- DNS CAAレコード確認
+- 証明書発行許可情報の表示
+- issue / issuewild / iodef タグ表示
+- flags / tag / value / raw record 表示
+- 1つのドメインのみ入力
+
+## Multi Check / 一括確認
+
+- Individual check pages remain available for each supported diagnostic function
+- `/multi-check` provides a Multi Check UI for selected domain-based checks
+- Multi Check currently focuses on checks that use a domain name as input
+- PTR and Security Headers remain separate because they use different input types
+
+- 各診断機能は個別チェックページから利用可能
+- `/multi-check` は選択したドメイン系チェックをまとめて確認する UI
+- Multi Check は現在、ドメイン名を入力にするチェックを対象
+- PTR と Security Headers は入力形式が異なるため個別ページとして提供
+
+## Security Headers / セキュリティヘッダー確認
+
+- Selected HTTP response header display
+- Strict-Transport-Security display
+- Content-Security-Policy display
+- X-Frame-Options display
+- X-Content-Type-Options display
+- Referrer-Policy display
+- Permissions-Policy display
+- Public HTTP / HTTPS URL input only
+
+- 主要HTTPレスポンスヘッダー表示
+- Strict-Transport-Security 表示
+- Content-Security-Policy 表示
+- X-Frame-Options 表示
+- X-Content-Type-Options 表示
+- Referrer-Policy 表示
+- Permissions-Policy 表示
+- 公開HTTP / HTTPS URLのみ入力可能
+
 ## Public Release Preparation / 公開向け対応
 
 - Privacy Policy page
@@ -166,6 +246,7 @@ Network Check running locally.
 | Route | Description |
 |---|---|
 | `/` | Client network information |
+| `/checks` | All Checks / diagnostic function list |
 | `/domain` | DNS IPv4 / IPv6 verification |
 | `/tls` | TLS version and cipher check |
 | `/http2` | HTTP/2 negotiation check |
@@ -174,6 +255,11 @@ Network Check running locally.
 | `/mx` | DNS MX record check |
 | `/spf` | DNS SPF record check |
 | `/dmarc` | DNS DMARC record check |
+| `/multi-check` | Multi Check UI for selected domain-based checks |
+| `/network-check/` | Public-facing Network Check page |
+| `/ptr` | DNS PTR reverse lookup |
+| `/caa` | DNS CAA record check |
+| `/security-headers` | Selected HTTP security response header display |
 | `/privacy` | Privacy Policy |
 | `/terms` | Terms of Service |
 | `/contact` | Contact information |
@@ -183,12 +269,12 @@ Network Check running locally.
 
 # Technology Stack / 技術構成
 
-- Python 3.12
+- Python 3.9 or newer
 - FastAPI
 - Jinja2
 - dnspython
 - Uvicorn
-- Python standard `ssl` / `socket`
+- Python standard `ssl` / `socket` / `urllib`
 - Runtime `curl` for HTTP/2 capability check
 
 ---
@@ -198,14 +284,22 @@ Network Check running locally.
 ## Clone repository
 
 ```bash
-git clone https://github.com/mars70s/network-check.git
+git clone https://github.com/mars70s/network-check-public-export.git
 cd network-check
 ```
 
 ## Create virtual environment
 
+### Linux / macOS
+
+```bash
+python3 -m venv venv
+```
+
+### Windows PowerShell
+
 ```powershell
-py -3.12 -m venv venv
+py -3 -m venv venv
 ```
 
 ## Activate virtual environment
@@ -224,7 +318,7 @@ source venv/bin/activate
 
 ## Install dependencies
 
-```powershell
+```bash
 pip install -r requirements.txt
 ```
 
@@ -234,7 +328,7 @@ pip install -r requirements.txt
 
 ## Start development server
 
-```powershell
+```bash
 uvicorn main:app --reload
 ```
 
@@ -261,6 +355,7 @@ General deployment considerations:
 - keep environment-specific values outside Git
 - use `.env` or an equivalent mechanism for local configuration
 - run the application with an appropriate ASGI server
+- bind the ASGI server to localhost when it is placed behind a reverse proxy
 - place reverse proxy, TLS, process manager, and restart policy under the operator's responsibility
 - test routes locally before deployment
 
@@ -269,6 +364,7 @@ General deployment considerations:
 - 環境固有値は Git の外に分離する
 - `.env` または同等の仕組みでローカル設定を管理する
 - 適切な ASGI server でアプリケーションを実行する
+- reverse proxy 配下では ASGI server を localhost に限定して待ち受けさせる
 - reverse proxy、TLS、process manager、restart policy は運用者の責任で設定する
 - デプロイ前にローカルで route を確認する
 
@@ -308,18 +404,42 @@ network-check/
 ├── main.py
 ├── requirements.txt
 ├── README.md
+├── LICENSE
 ├── .env.example
 ├── .gitignore
 ├── docs/
+│   ├── AGENTS.md
 │   ├── PROJECT_RULES.md
+│   ├── NOW.md
 │   ├── CURRENT_STATE.md
 │   ├── ROADMAP.md
 │   ├── NEXT_ACTIONS.md
 │   ├── CHANGELOG.md
-│   └── DEVELOPMENT_WORKFLOW.md
+│   ├── DEVELOPMENT_WORKFLOW.md
+│   ├── HANDOFF_PROMPT.md
+│   ├── PUBLIC_REPOSITORY_EXPORT.md
+│   ├── PUBLIC_UI_COPY_GUIDE.md
+│   ├── REFACTOR_CHECK_MODULES.md
+│   ├── images/
+│   └── public_templates/
+├── network_check/
+│   └── checks/
+│       ├── dns.py
+│       ├── tls.py
+│       ├── http2.py
+│       ├── dns_timing.py
+│       ├── ip_preference.py
+│       ├── mail.py
+│       ├── ptr.py
+│       ├── caa.py
+│       └── security_headers.py
 ├── templates/
 │   ├── base.html
+│   ├── public_base.html
 │   ├── index.html
+│   ├── checks.html
+│   ├── multi_check.html
+│   ├── public_network_check.html
 │   ├── domain.html
 │   ├── tls.html
 │   ├── http2.html
@@ -328,12 +448,16 @@ network-check/
 │   ├── mx.html
 │   ├── spf.html
 │   ├── dmarc.html
+│   ├── ptr.html
+│   ├── caa.html
+│   ├── security_headers.html
 │   ├── privacy.html
 │   ├── terms.html
 │   └── contact.html
 └── static/
     ├── style.css
-    └── app.js
+    ├── app.js
+    └── multi_check.js
 ```
 
 ## Directory Notes / ディレクトリ説明
@@ -344,9 +468,18 @@ network-check/
 | `requirements.txt` | Python dependencies |
 | `.env.example` | Example environment configuration |
 | `.gitignore` | Files excluded from Git |
-| `docs/` | Development and operation documents |
+| `docs/` | Development, current-state, public-export, and handoff documents |
+| `docs/PUBLIC_REPOSITORY_EXPORT.md` | Public-safe selected-file export procedure |
+| `docs/PUBLIC_UI_COPY_GUIDE.md` | Public UI and copy direction for `/network-check/` |
+| `docs/REFACTOR_CHECK_MODULES.md` | Consolidated check-module refactor guidance |
+| `docs/public_templates/` | Public-safe documentation templates |
+| `network_check/checks/` | Modular backend check implementations |
 | `templates/base.html` | Common layout template |
+| `templates/public_base.html` | Public-facing layout template |
 | `templates/index.html` | Client network information page |
+| `templates/checks.html` | All Checks / diagnostic function list page |
+| `templates/multi_check.html` | Domain Multi Check page |
+| `templates/public_network_check.html` | Public-facing Network Check page |
 | `templates/domain.html` | Domain DNS verification page |
 | `templates/tls.html` | TLS check page |
 | `templates/http2.html` | HTTP/2 check page |
@@ -355,11 +488,16 @@ network-check/
 | `templates/mx.html` | DNS MX record check page |
 | `templates/spf.html` | DNS SPF record check page |
 | `templates/dmarc.html` | DNS DMARC record check page |
+| `templates/ptr.html` | DNS PTR reverse lookup page |
+| `templates/caa.html` | DNS CAA record check page |
+| `templates/security_headers.html` | Security response headers check page |
 | `templates/privacy.html` | Privacy Policy page |
 | `templates/terms.html` | Terms of Service page |
 | `templates/contact.html` | Contact page |
 | `static/style.css` | Stylesheet |
 | `static/app.js` | Browser-side JavaScript |
+| `static/multi_check.js` | Browser-side Domain Multi Check result rendering |
+| `tools/` | Private-side helper scripts for repository maintenance and public-safe export preparation |
 
 ---
 
@@ -435,15 +573,18 @@ Active development.
 
 開発継続中。
 
+## Public site visual alignment
 
+When this application is exposed under `doudemoiikedo.com/network-check/`, its public-facing wording and visual tone should remain aligned with the parent site.
 
+The parent site defines the public presentation direction:
 
+- calm and relaxed tone
+- low-pressure wording
+- warm off-white / brown color palette
+- minimal technical-tool impression
+- Japanese-first text with light English support where appropriate
 
+This repository owns the Network Check application behavior and implementation.
 
-
-
-
-
-
-
-
+The surrounding public-site concept, top-page navigation wording, and visual alignment policy are coordinated from the public-site maintenance workflow, not from this application alone.

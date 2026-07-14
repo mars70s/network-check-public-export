@@ -4,23 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Network Check / ネット環境チェック{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="{{ base_path }}/static/style.css?v=20260609-phase6-3">
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="{{ base_path }}/">Network Check</a>
       <nav>
-        <a class="{% if page == 'home' %}active{% endif %}" href="{{ base_path }}/">My Network<br><small>自分の環境</small></a>
-        <a class="{% if page == 'domain' %}active{% endif %}" href="{{ base_path }}/domain">Domain Check<br><small>ドメイン確認</small></a>
-        <a class="{% if page == 'tls' %}active{% endif %}" href="{{ base_path }}/tls">TLS Check<br><small>TLS確認</small></a>
-        <a class="{% if page == 'http2' %}active{% endif %}" href="{{ base_path }}/http2">HTTP/2 Check<br><small>HTTP/2確認</small></a>
-        <a class="{% if page == 'dns_timing' %}active{% endif %}" href="{{ base_path }}/dns-timing">DNS Timing<br><small>DNS応答時間</small></a>
-        <a class="{% if page == 'ip_preference' %}active{% endif %}" href="{{ base_path }}/ip-preference">IP Preference<br><small>IP優先状況</small></a>
-        <a class="{% if page == 'mx' %}active{% endif %}" href="{{ base_path }}/mx">MX Check<br><small>MX確認</small></a>
-        <a class="{% if page == 'spf' %}active{% endif %}" href="{{ base_path }}/spf">SPF Check<br><small>SPF確認</small></a>
-        <a class="{% if page == 'dmarc' %}active{% endif %}" href="{{ base_path }}/dmarc">DMARC Check<br><small>DMARC確認</small></a>
-        <a class="{% if page == 'privacy' %}active{% endif %}" href="{{ base_path }}/privacy">Privacy<br><small>プライバシー</small></a>
+        <a class="{% if page == 'home' %}active{% endif %}" href="{{ base_path }}/"><span class="nav-label-full">Home</span><span class="nav-label-short">Home</span><br><small>ホーム</small></a>
+        <a class="{% if page == 'multi_check' %}active{% endif %}" href="{{ base_path }}/multi-check"><span class="nav-label-full">Domain Multi Check</span><span class="nav-label-short">Domain Multi</span><br><small>ドメイン一括確認</small></a>
+        <a class="{% if page in ['checks', 'domain', 'tls', 'http2', 'dns_timing', 'ip_preference', 'mx', 'spf', 'dmarc', 'ptr', 'caa', 'security_headers'] %}active{% endif %}" href="{{ base_path }}/checks"><span class="nav-label-full">Individual Checks</span><span class="nav-label-short">Single</span><br><small>個別診断</small></a>
+        <a class="{% if page == 'privacy' %}active{% endif %}" href="{{ base_path }}/privacy"><span class="nav-label-full">Privacy</span><span class="nav-label-short">Privacy</span><br><small>プライバシー</small></a>
+        <a class="{% if page == 'contact' %}active{% endif %}" href="{{ base_path }}/contact"><span class="nav-label-full">Contact</span><span class="nav-label-short">Contact</span><br><small>お問い合わせ</small></a>
       </nav>
     </div>
   </header>
@@ -43,18 +38,9 @@
       <a href="{{ base_path }}/contact">Contact / お問い合わせ</a>
     </p>
     <p>
-      This site only checks your own connection information and DNS records for one domain entered by the user.<br>
-      このサイトは、利用者自身の接続情報と入力された1ドメインのDNS情報だけを確認します。
+      This site only performs lightweight checks for user-entered connection information, domains, IP addresses, or public URLs.<br>
+      このサイトは、利用者自身の接続情報、入力されたドメイン、IPアドレス、または公開URLに対する軽量確認のみを行います。
     </p>
   </footer>
 </body>
 </html>
-
-
-
-
-
-
-
-
-

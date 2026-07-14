@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ドメインの基本確認 / Network Check{% endblock %}</title>
+  <link rel="stylesheet" href="{{ base_path }}/static/style.css?v=20260708-shared-explanation-visual-review">
+</head>
+<body class="public-view">
+  <header class="site-header public-header">
+    <div class="container public-header-inner">
+      <a class="brand public-brand" href="/">doudemoiikedo.com</a>
+      <nav class="nav public-nav" aria-label="Public navigation">
+        <a class="{% if page == 'public_network_check' %}active{% endif %}" href="/network-check/">Network Check</a>
+        <a href="/about/">About</a>
+        <a href="mailto:lazy@doudemoiikedo.com">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container public-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="container public-footer">
+    {% block public_footer %}
+    <div class="public-safety-note">
+      <strong>使い方の範囲 / Safety boundary</strong>
+      <p>
+        自分で管理している、または確認してよい公開ドメインだけを入力してください。このページは基本的な確認だけを行います。ポートスキャン、不正アクセス、大量クロール、安全性の認定や保証は行いません。
+      </p>
+      <p>
+        Use only domains you own or are allowed to check. This page does not perform port scanning, unauthorized access, bulk crawling, certification, or guarantees.
+      </p>
+    </div>
+    {% endblock %}
+  </footer>
+</body>
+</html>

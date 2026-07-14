@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Security Headers / セキュリティヘッダー確認{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Security Headers</p>
+  <h1>Security Headers Check<span>HTTPレスポンスヘッダーを確認</span></h1>
+  <p class="lead">Enter one public HTTP or HTTPS URL to display selected security-related response headers.<br>公開HTTP/HTTPS URLを1つ入力し、主要なセキュリティ関連レスポンスヘッダーを表示します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/security-headers" class="domain-form">
+    <label for="url">Public URL<small>公開URL</small></label>
+    <div class="form-row">
+      <input id="url" name="url" type="url" placeholder="https://example.com/" value="{{ url_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">Only http:// and https:// URLs on default ports are allowed. Localhost, private, loopback, link-local, multicast, unspecified, reserved, and non-public addresses are rejected.<br>標準ポートの http:// と https:// のみ対応します。localhost、private、loopback、link-local、multicast、unspecified、reserved、非公開アドレスは拒否します。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+      {% if result.resolved_ips %}
+        <h3>Resolved addresses <small>解決されたIPアドレス</small></h3>
+        <ul class="record-list">
+          {% for ip in result.resolved_ips %}
+            <li>{{ ip }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>Security Headers result <small>セキュリティヘッダー確認結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+
+      <div class="grid two">
+        <article class="card">
+          <h2>URL <small>対象URL</small></h2>
+          <p class="mono wrap">{{ result.url }}</p>
+        </article>
+        <article class="card">
+          <h2>HTTP response <small>HTTP応答</small></h2>
+          <p class="mono">{{ result.method }} {{ result.status_code }} {{ result.reason }}</p>
+        </article>
+      </div>
+
+      <h3>Selected Headers <small>確認対象ヘッダー</small></h3>
+      <table class="record-table">
+        <thead>
+          <tr>
+            <th>Header<br><small>ヘッダー</small></th>
+            <th>Status<br><small>状態</small></th>
+            <th>Value<br><small>値</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in result.header_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td>{% if item.present %}Present / あり{% else %}Not present / 未設定{% endif %}</td>
+              <td>{% if item.value %}{{ item.value }}{% else %}-{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Resolved public addresses <small>解決された公開IPアドレス</small></h3>
+      <ul class="record-list">
+        {% for ip in result.resolved_ips %}
+          <li>{{ ip }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function performs one normal HTTP HEAD request, with a safe GET fallback when needed, for one user-entered public URL. It does not perform port scanning, vulnerability scanning, exploit testing, unauthorized access, reputation scoring, address range scanning, or bulk crawling. Missing headers are displayed as information only and are not a vulnerability judgment.<br>この機能は、利用者が入力した1つの公開URLに対し、通常のHTTP HEADリクエストを行い、必要な場合のみ安全なGET fallbackを行います。ポートスキャン、脆弱性診断、exploit testing、不正アクセス、危険判定、アドレス範囲スキャン、大量クロールは行いません。未設定ヘッダーは情報として表示するだけで、脆弱性判定ではありません。</p>
+</section>
+{% endblock %}

@@ -3,8 +3,8 @@
 {% block content %}
 <section class="hero">
   <p class="eyebrow">TLS Check</p>
-  <h1>TLS Check<span>TLSバージョンを確認</span></h1>
-  <p class="lead">Enter a domain name to check the negotiated TLS version and cipher on port 443.<br>ドメイン名を入力すると、443番ポートで実際に使用されるTLSバージョンとcipherを確認します。</p>
+  <h1>TLS Check<span>TLSバージョンと証明書を確認</span></h1>
+  <p class="lead">Enter a domain name to check the negotiated TLS version, cipher, and certificate information on port 443.<br>ドメイン名を入力すると、443番ポートで使用されるTLSバージョン、cipher、証明書情報を確認します。</p>
 </section>
 
 <section class="card">
@@ -28,19 +28,39 @@
     <section class="card result {{ result.level }}">
       <h2>{{ result.domain }} TLS result <small>{{ result.domain }} のTLS結果</small></h2>
       <p class="status">{{ result.status }}</p>
+
+      <h3>Connection / 接続情報</h3>
       <ul class="record-list">
         <li>TLS Version / TLSバージョン: {{ result.tls_version }}</li>
         <li>Cipher / 暗号スイート: {{ result.cipher }}</li>
         <li>Protocol / プロトコル: {{ result.cipher_protocol }}</li>
         <li>Bits / ビット数: {{ result.cipher_bits }}</li>
       </ul>
+
+      <h3>Certificate / 証明書</h3>
+      <ul class="record-list">
+        <li>Expires at / 有効期限: {{ result.certificate_expires_at }}</li>
+        <li>Remaining days / 残り日数: {{ result.certificate_remaining_days }}</li>
+        <li>Issuer / 発行者: {{ result.certificate_issuer }}</li>
+        <li>Subject / 対象: {{ result.certificate_subject }}</li>
+      </ul>
+
+      <h3>SAN / Subject Alternative Names</h3>
+      {% if result.certificate_san %}
+        <ul class="record-list">
+          {% for name in result.certificate_san %}
+            <li>{{ name }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">No SAN entries were found. / SANは見つかりませんでした。</p>
+      {% endif %}
     </section>
   {% endif %}
 {% endif %}
 
 <section class="note">
   <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
-  <p>This function only performs a normal TLS connection to the user-entered domain on port 443. It does not perform port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力したドメインの443番ポートへ通常のTLS接続を行うだけです。ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
+  <p>This function only performs a normal TLS connection to the user-entered domain on port 443 and reads the presented certificate. It does not perform port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力したドメインの443番ポートへ通常のTLS接続を行い、提示された証明書を確認するだけです。ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
 </section>
 {% endblock %}
-

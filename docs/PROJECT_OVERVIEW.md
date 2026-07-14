@@ -1,48 +1,46 @@
-﻿# Project Overview
+# Project Overview
 
 ## Purpose
 
-Network Check is a lightweight public network diagnostic service.
+Network Check is a lightweight public network and domain diagnostic service.
+It displays externally observable information about submitted public targets.
+It does not change remote systems.
 
-It helps users inspect externally observable network and domain configuration information.
+## Public Features
 
-## Scope
+- Client IPv4 / IPv6 visibility.
+- DNS A, AAAA, CNAME, NS, and SOA lookup.
+- IPv4-only, IPv6-only, and dual-stack classification.
+- DNS response timing.
+- IPv4 / IPv6 availability analysis.
+- TLS negotiation and certificate information.
+- HTTP/2 negotiation visibility.
+- MX, SPF, and DMARC lookup.
+- PTR reverse lookup.
+- CAA lookup.
+- Selected HTTP Security headers.
+- Domain Multi Check.
+- public explanation pages.
+- anonymous aggregate usage counters.
 
-This project focuses on:
+## Safety Boundary
 
-- client IPv4 / IPv6 visibility
-- DNS A / AAAA lookup
-- dual-stack classification
-- TLS version and cipher visibility
-- HTTP/2 negotiation visibility
-- DNS response timing
-- IPv4 / IPv6 availability preference
-- MX record lookup
-- SPF record lookup
-- DMARC record lookup
+- No port scan.
+- No vulnerability scan.
+- No SMTP authentication test.
+- No mail sending.
+- No brute force.
+- No firewall changes.
+- No remote system changes.
+- Direct-connect checks reject non-public or special-use destinations before connection.
 
-## Out of Scope
+## Data Position
 
-This project does not provide:
-
-- port scanning
-- vulnerability scanning
-- SMTP login testing
-- mail sending tests
-- brute-force testing
-- firewall management
-- fail2ban management
-- persistent monitoring
-- long-term diagnostic result storage
-
-## Design Position
-
-Network Check is designed as a read-only diagnostic application.
-
-It observes public-facing network configuration but does not modify remote systems, local firewall rules, systemd services, or mail configuration.
+- Submitted targets and diagnostic results are not saved as public repository data.
+- Runtime may store an anonymous daily aggregate counter in SQLite.
+- Aggregate records do not contain submitted domain, submitted IP, URL, headers, cookies, User-Agent, client identifier, or diagnostic result.
 
 ## Repository Role
 
-This public repository is intended for portfolio and reference use.
-
-It contains public-safe source code, documentation, and configuration examples only.
+This public repository is for portfolio and reference use.
+It contains selected public-safe source, docs, templates, static assets, and configuration examples only.

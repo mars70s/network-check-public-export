@@ -1,0 +1,62 @@
+{% extends "public_base.html" %}
+{% block title %}{{ explanation.title }} / Network Check{% endblock %}
+{% block content %}
+<article class="explanation-page" aria-labelledby="public-explanation-title">
+  <header class="explanation-hero">
+    <p class="eyebrow">{{ explanation.eyebrow }}</p>
+    <h1 id="public-explanation-title">{{ explanation.title }}<span>{{ explanation.subtitle }}</span></h1>
+    <p class="lead">{{ explanation.summary }}</p>
+    <p class="explanation-position">
+      このページでは、外から確認できる公開情報を、分かることと分からないことに分けて整理します。
+    </p>
+  </header>
+
+  <div class="explanation-body">
+    {% for card_key in ["general", "technical", "boundary"] %}
+    {% set card = explanation.cards[card_key] %}
+    <section class="explanation-card explanation-card-{{ card_key }}" aria-labelledby="{{ explanation.slug }}-{{ card_key }}-title">
+      <header class="explanation-card-head">
+        <p class="explanation-kicker">{{ card.kicker }}</p>
+        <h2 id="{{ explanation.slug }}-{{ card_key }}-title">{{ card.title }}</h2>
+      </header>
+
+      {% if card.lead %}
+      <p class="explanation-lead">
+        {% for part in card.lead %}{% if part.code %}<code>{{ part.code }}</code>{% elif part.href %}<a href="{{ part.href }}">{{ part.text }}</a>{% else %}{{ part.text }}{% endif %}{% endfor %}
+      </p>
+      {% endif %}
+
+      {% for section in card.sections %}
+      <section class="explanation-section" aria-labelledby="{{ explanation.slug }}-{{ card_key }}-{{ loop.index }}-title">
+        <h3 id="{{ explanation.slug }}-{{ card_key }}-{{ loop.index }}-title">{{ section.heading }}</h3>
+        {% for paragraph in section.paragraphs %}
+        <p>{% for part in paragraph %}{% if part.code %}<code>{{ part.code }}</code>{% elif part.href %}<a href="{{ part.href }}">{{ part.text }}</a>{% else %}{{ part.text }}{% endif %}{% endfor %}</p>
+        {% endfor %}
+      </section>
+      {% endfor %}
+
+      {% if card.term_table %}
+      <section class="explanation-section explanation-terms" aria-label="用語メモ">
+        <h3>用語メモ</h3>
+        <dl>
+          {% for item in card.term_table %}
+          <dt><code>{{ item.label }}</code></dt>
+          <dd>{{ item.value }}</dd>
+          {% endfor %}
+        </dl>
+      </section>
+      {% endif %}
+    </section>
+    {% endfor %}
+
+    <nav class="explanation-nav" aria-label="関連ページ">
+      <h2>ほかの解説を見る</h2>
+      <p>
+        <a href="{{ public_path }}/guide/">解説一覧へ戻る</a>
+        <span aria-hidden="true"> / </span>
+        <a href="{{ public_path }}/">Network Check に戻る</a>
+      </p>
+    </nav>
+  </div>
+</article>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}All Checks / 診断一覧{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>All Checks<span>診断一覧</span></h1>
+  <p class="lead">Choose a diagnostic tool by purpose.<br>目的に応じて利用する診断ツールを選択できます。</p>
+</section>
+
+<section class="card wide">
+  <h2>Available Diagnostics <small>利用できる診断項目</small></h2>
+
+  <div class="tool-section">
+    <h3>Your Connection <small>接続情報</small></h3>
+    <div class="tool-grid">
+      <a class="tool-card" href="{{ base_path }}/">
+        <strong>Connection Information</strong>
+        <span>Your IP address, IP version, browser, language, time zone, and screen size</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="tool-section">
+    <h3>Individual Domain Checks <small>ドメイン項目別チェック</small></h3>
+    <div class="tool-grid">
+      <a class="tool-card" href="{{ base_path }}/domain">
+        <strong>Domain Check</strong>
+        <span>DNS records and domain information</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/tls">
+        <strong>TLS Check</strong>
+        <span>TLS version and cipher inspection</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/http2">
+        <strong>HTTP/2 Check</strong>
+        <span>HTTP/2 negotiation verification</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/dns-timing">
+        <strong>DNS Timing</strong>
+        <span>DNS A / AAAA response timing</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/ip-preference">
+        <strong>IP Preference</strong>
+        <span>IPv4 / IPv6 availability analysis</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/mx">
+        <strong>MX Check</strong>
+        <span>Mail exchanger DNS record check</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/spf">
+        <strong>SPF Check</strong>
+        <span>Sender policy TXT record check</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/dmarc">
+        <strong>DMARC Check</strong>
+        <span>Mail authentication policy record check</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/caa">
+        <strong>CAA Check</strong>
+        <span>Certificate authority authorization DNS record check</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="tool-section">
+    <h3>IP / URL Checks <small>IP / URL 個別チェック</small></h3>
+    <div class="tool-grid">
+      <a class="tool-card" href="{{ base_path }}/ptr">
+        <strong>PTR Check</strong>
+        <span>Reverse DNS lookup for one IP address</span>
+      </a>
+
+      <a class="tool-card" href="{{ base_path }}/security-headers">
+        <strong>Security Headers</strong>
+        <span>Selected HTTP response header visibility for one public URL</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="tool-section">
+    <h3>Batch Check <small>まとめて確認</small></h3>
+    <div class="tool-grid">
+      <a class="tool-card" href="{{ base_path }}/multi-check">
+        <strong>Domain Multi Check</strong>
+        <span>Run multiple domain configuration checks together</span>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

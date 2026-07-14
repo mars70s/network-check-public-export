@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}PTR Check / PTR確認{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">PTR Check</p>
+  <h1>PTR Check<span>IPアドレスの逆引きを確認</span></h1>
+  <p class="lead">Enter an IPv4 or IPv6 address to check its DNS PTR record.<br>IPv4またはIPv6アドレスを入力すると、DNS PTRレコードを確認します。</p>
+</section>
+
+<section class="card">
+  <form method="post" action="{{ base_path }}/ptr" class="domain-form">
+    <label for="ip_input">IP address<small>IPアドレス</small></label>
+    <div class="form-row">
+      <input id="ip_input" name="ip_input" type="text" placeholder="8.8.8.8" value="{{ ip_input }}" required>
+      <button type="submit">Check / 確認する</button>
+    </div>
+    <p class="hint">Examples: 8.8.8.8, 2001:4860:4860::8888. This check only performs a normal DNS PTR lookup.<br>例: 8.8.8.8、2001:4860:4860::8888。この確認は通常のDNS PTR問い合わせのみを行います。</p>
+  </form>
+</section>
+
+{% if result %}
+  {% if not result.ok %}
+    <section class="card result bad">
+      <h2>Unable to check <small>確認できませんでした</small></h2>
+      <p>{{ result.error }}</p>
+    </section>
+  {% else %}
+    <section class="card result {{ result.level }}">
+      <h2>{{ result.ip }} PTR result <small>{{ result.ip }} のPTR結果</small></h2>
+      <p class="status">{{ result.status }}</p>
+
+      <h3>Query / 問い合わせ情報</h3>
+      <ul class="record-list">
+        <li>IP address / IPアドレス: {{ result.ip }}</li>
+        <li>IP version / IPバージョン: {{ result.ip_version }}</li>
+        <li>Reverse name / 逆引き名: {{ result.reverse_name }}</li>
+        {% if result.authority_zone %}
+          <li>Estimated authority zone / 推定管理ゾーン: {{ result.authority_zone }}</li>
+        {% endif %}
+      </ul>
+      {% if result.authority_note %}
+        <p class="hint">{{ result.authority_note }}</p>
+      {% endif %}
+
+      <h3>PTR Records <small>PTRレコード</small></h3>
+      {% if result.ptr_records %}
+        <ul class="record-list">
+          {% for record in result.ptr_records %}
+            <li>{{ record }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">Not found. / 見つかりませんでした。</p>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endif %}
+
+<section class="note">
+  <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
+  <p>This function only checks DNS PTR records for one user-entered IP address. It does not perform port scanning, vulnerability scanning, unauthorized access, reputation scoring, address range scanning, or bulk crawling.<br>この機能は、利用者が入力した1つのIPアドレスに対するDNS PTRレコード確認のみを行います。ポートスキャン、脆弱性診断、不正アクセス、危険判定、アドレス範囲スキャン、大量クロールは行いません。</p>
+</section>
+{% endblock %}

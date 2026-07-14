@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Domain IPv4/IPv6 Check / ドメインIPv4・IPv6確認{% endblock %}
+{% block title %}Domain DNS Detail / ドメインDNS詳細{% endblock %}
 {% block content %}
 <section class="hero">
   <p class="eyebrow">Domain Check</p>
-  <h1>Domain Check<span>ドメインのIPv4 / IPv6対応を確認</span></h1>
-  <p class="lead">Enter a domain name to check its A and AAAA DNS records.<br>ドメイン名を入力すると、AレコードとAAAAレコードを確認します。</p>
+  <h1>Domain DNS Detail<span>ドメインのDNSレコードを確認</span></h1>
+  <p class="lead">Enter a domain name to check its A, AAAA, CNAME, NS, and SOA DNS records.<br>ドメイン名を入力すると、A、AAAA、CNAME、NS、SOAレコードを確認します。</p>
 </section>
 
 <section class="card">
@@ -18,6 +18,22 @@
   </form>
 </section>
 
+{% macro record_card(title, subtitle, hint_en, hint_ja, records) %}
+<article class="card">
+  <h2>{{ title }} <small>{{ subtitle }}</small></h2>
+  <p class="hint">{{ hint_en }}<br>{{ hint_ja }}</p>
+  {% if records %}
+    <ul class="record-list">
+      {% for record in records %}
+        <li>{{ record }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">Not found. / 見つかりませんでした。</p>
+  {% endif %}
+</article>
+{% endmacro %}
+
 {% if result %}
   {% if not result.ok %}
     <section class="card result bad">
@@ -30,35 +46,19 @@
       <p class="status">{{ result.status }}</p>
       <p>{{ result.message }}</p>
     </section>
+
     <section class="grid two">
-      <article class="card">
-        <h2>A Records <small>Aレコード</small></h2>
-        <p class="hint">DNS records used for IPv4 addresses.<br>IPv4用のDNSレコードです。</p>
-        {% if result.a_records %}
-          <ul class="record-list">{% for record in result.a_records %}<li>{{ record }}</li>{% endfor %}</ul>
-        {% else %}
-          <p class="empty">Not found. / 見つかりませんでした。</p>
-        {% endif %}
-      </article>
-      <article class="card">
-        <h2>AAAA Records <small>AAAAレコード</small></h2>
-        <p class="hint">DNS records used for IPv6 addresses.<br>IPv6用のDNSレコードです。</p>
-        {% if result.aaaa_records %}
-          <ul class="record-list">{% for record in result.aaaa_records %}<li>{{ record }}</li>{% endfor %}</ul>
-        {% else %}
-          <p class="empty">Not found. / 見つかりませんでした。</p>
-        {% endif %}
-      </article>
+      {{ record_card("A Records", "Aレコード", "DNS records used for IPv4 addresses.", "IPv4用のDNSレコードです。", result.a_records) }}
+      {{ record_card("AAAA Records", "AAAAレコード", "DNS records used for IPv6 addresses.", "IPv6用のDNSレコードです。", result.aaaa_records) }}
+      {{ record_card("CNAME Records", "CNAMEレコード", "Canonical name records. These point one name to another name.", "別名から正式名へ向けるDNSレコードです。", result.cname_records) }}
+      {{ record_card("NS Records", "NSレコード", "Name server records for this domain.", "このドメインを担当するDNSサーバーです。", result.ns_records) }}
+      {{ record_card("SOA Records", "SOAレコード", "Start of Authority records for DNS zone management.", "DNSゾーン管理情報を示すレコードです。", result.soa_records) }}
     </section>
   {% endif %}
 {% endif %}
 
 <section class="note">
   <h2>Legal and safety note <small>法務・安全上の注意</small></h2>
-  <p>This function only checks DNS A and AAAA records for one user-entered domain. It does not perform port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力した1つのドメインに対するDNSのA/AAAAレコード確認のみです。ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
+  <p>This function only checks DNS records for one user-entered domain. It does not perform zone transfer, subdomain enumeration, port scanning, vulnerability scanning, unauthorized access, reputation scoring, or bulk crawling.<br>この機能は、利用者が入力した1つのドメインに対して通常のDNSレコード確認のみを行います。ゾーン転送、サブドメイン列挙、ポートスキャン、脆弱性診断、不正アクセス、危険判定、大量クロールは行いません。</p>
 </section>
 {% endblock %}
-
-
-
-

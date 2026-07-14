@@ -1,0 +1,53 @@
+{% extends "public_base.html" %}
+{% block title %}Network Check 解説一覧{% endblock %}
+{% block content %}
+<section class="public-hero" aria-labelledby="public-guide-title">
+  <p class="eyebrow">どうでもいいけど、少しだけ気になる。</p>
+  <h1 id="public-guide-title">Network Check guide<span>外から見える情報を確認する</span></h1>
+  <p class="lead">
+    DNS、メール、TLS、HTTP 応答など、公開情報として確認できるものを項目ごとに整理しています。
+  </p>
+  <p class="public-en">
+    診断や保証ではなく、表示された情報を読み違えないための案内です。
+  </p>
+</section>
+
+<section class="guide-index-shell" aria-label="Network Check explanation guide">
+  <header class="guide-index-head">
+    <p class="eyebrow">Guide index</p>
+    <h2>解説一覧 <small>公開されている情報の見方</small></h2>
+    <p>
+      DNS で名前と住所の関係を確認し、必要に応じてメール、証明書、HTTP 応答へ読み進めます。
+    </p>
+  </header>
+
+  <nav class="guide-index-list" aria-label="Explanation pages">
+    {% for item in guide_items %}
+    <a class="guide-index-row" href="{{ public_path }}/{{ item.slug }}/">
+      <span class="guide-index-number">{{ "%02d"|format(item.page_order) }}</span>
+      <span class="guide-index-copy">
+        <span class="guide-index-title-line">
+          <strong>{{ item.title }}</strong>
+          <span class="guide-index-meta">
+            {% if item.input_type == "domain" %}ドメイン名{% elif item.input_type == "ip" %}IP アドレス{% elif item.input_type == "url" %}URL{% else %}公開情報{% endif %}
+          </span>
+        </span>
+        <span class="guide-index-subtitle">{{ item.subtitle }}</span>
+        <small>{{ item.summary }}</small>
+      </span>
+    </a>
+    {% endfor %}
+  </nav>
+
+  <section class="guide-index-boundary" aria-label="Guide safety boundary">
+    <strong>この一覧の範囲</strong>
+    <p>
+      Network Check は、公開されている DNS や通常の Web 応答から見える情報を確認するページです。
+      サイト全体の安全性、運用の正しさ、所有者、到達性、メール配送結果を保証するものではありません。
+    </p>
+    <p>
+      <a href="{{ public_path }}/">Network Check に戻る</a>
+    </p>
+  </section>
+</section>
+{% endblock %}

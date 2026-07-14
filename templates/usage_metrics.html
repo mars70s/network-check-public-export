@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usage Metrics / Network Check</title>
+  <link rel="stylesheet" href="{{ base_path }}/static/style.css?v=20260614-public-light-theme">
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">Protected summary</p>
+      <h1>Network Check 利用状況</h1>
+      <p class="lead">
+        入力内容・出力結果・IP・User-Agent・Referer・Cookie・Session ID は保存しない、匿名の日次集計です。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Storage</h2>
+      <dl>
+        <dt>DB path</dt>
+        <dd><code>{{ metrics_status.db_path }}</code></dd>
+        <dt>DB exists</dt>
+        <dd><code>{{ metrics_status.db_exists }}</code></dd>
+      </dl>
+      <p>
+        このページは public navigation には表示しません。必要な場合は canonical <code>/usage-metrics</code> route から確認します。
+      </p>
+    </section>
+
+    {% if metrics_error %}
+    <section class="card status-card failed">
+      <h2>Metrics error</h2>
+      <p>{{ metrics_error }}</p>
+    </section>
+    {% endif %}
+
+    {% if usage_dashboard %}
+    <section class="card">
+      <h2>Summary totals</h2>
+      <p>
+        既存の匿名日次カウンターを集計した概要です。入力値や結果本文は含みません。
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Range</th>
+              <th>Total events</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in usage_dashboard.summary_totals %}
+            <tr>
+              <td>{{ item.label }}</td>
+              <td><code>{{ item.period }}</code></td>
+              <td>{{ item.count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Popular check ranking</h2>
+      <p>
+        <code>multi_check_selected</code> の対象IDを集計したランキングです。
+      </p>
+
+      <h3>過去7日</h3>
+      {% if usage_dashboard.popular_checks.last_7_days %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Check</th>
+              <th>Count</th>
+              <th>Updated at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in usage_dashboard.popular_checks.last_7_days %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><code>{{ row.target_id }}</code></td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.updated_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>No selected check metrics recorded in the last 7 days.</p>
+      {% endif %}
+
+      <h3>過去30日</h3>
+      {% if usage_dashboard.popular_checks.last_30_days %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Check</th>
+              <th>Count</th>
+              <th>Updated at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in usage_dashboard.popular_checks.last_30_days %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><code>{{ row.target_id }}</code></td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.updated_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>No selected check metrics recorded in the last 30 days.</p>
+      {% endif %}
+
+      <h3>全期間</h3>
+      {% if usage_dashboard.popular_checks.all_time %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Check</th>
+              <th>Count</th>
+              <th>Updated at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in usage_dashboard.popular_checks.all_time %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><code>{{ row.target_id }}</code></td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.updated_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>No selected check metrics recorded yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Event / target totals</h2>
+      <p>
+        過去30日の <code>event_type</code> / <code>target_id</code> ごとの合計です。
+      </p>
+      {% if usage_dashboard.event_target_totals %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Event type</th>
+              <th>Target</th>
+              <th>Count</th>
+              <th>Updated at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in usage_dashboard.event_target_totals %}
+            <tr>
+              <td><code>{{ row.event_type }}</code></td>
+              <td><code>{{ row.target_id }}</code></td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.updated_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>No usage metrics recorded in the last 30 days.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Daily aggregate counters</h2>
+      <p>
+        過去30日の匿名日次カウンター一覧です。
+      </p>
+      {% if usage_dashboard.daily_rows %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Event type</th>
+              <th>Target</th>
+              <th>Count</th>
+              <th>Updated at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in usage_dashboard.daily_rows %}
+            <tr>
+              <td>{{ row.event_date }}</td>
+              <td><code>{{ row.event_type }}</code></td>
+              <td><code>{{ row.target_id }}</code></td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.updated_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>No usage metrics recorded in the last 30 days.</p>
+      {% endif %}
+    </section>
+    {% else %}
+    <section class="card">
+      <h2>Usage dashboard</h2>
+      <p>No usage metrics recorded yet.</p>
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>
