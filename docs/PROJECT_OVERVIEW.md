@@ -1,46 +1,61 @@
 # Project Overview
 
-## Purpose
+## プロジェクトの目的
 
-Network Check is a lightweight public network and domain diagnostic service.
-It displays externally observable information about submitted public targets.
-It does not change remote systems.
+Network Checkは、公開されているネットワーク・ドメイン情報を外部から読み取り、理解しやすい形で表示するread-onlyの確認サービスです。DNS、TLS、HTTP、メール関連DNSレコードなどを、通常の問い合わせや接続によって観察します。
 
-## Public Features
+対象システムの設定やデータは変更しません。表示結果は、その時点で外部から観察できた情報であり、サービス全体の正常性や安全性を保証するものではありません。
 
-- Client IPv4 / IPv6 visibility.
-- DNS A, AAAA, CNAME, NS, and SOA lookup.
-- IPv4-only, IPv6-only, and dual-stack classification.
-- DNS response timing.
-- IPv4 / IPv6 availability analysis.
-- TLS negotiation and certificate information.
-- HTTP/2 negotiation visibility.
-- MX, SPF, and DMARC lookup.
-- PTR reverse lookup.
-- CAA lookup.
-- Selected HTTP Security headers.
-- Domain Multi Check.
-- public explanation pages.
-- anonymous aggregate usage counters.
+## 想定利用者
 
-## Safety Boundary
+- 自分が管理するドメインの公開設定を確認したい人
+- DNS、TLS、HTTPなどの基本情報を学びたい人
+- IPv4 / IPv6対応状況やメール関連DNSレコードの概要を確認したい人
+- Network Checkの公開実装や文書を参照したい開発者
 
-- No port scan.
-- No vulnerability scan.
-- No SMTP authentication test.
-- No mail sending.
-- No brute force.
-- No firewall changes.
-- No remote system changes.
-- Direct-connect checks reject non-public or special-use destinations before connection.
+## 主要機能の分類
 
-## Data Position
+| 分類 | 機能 |
+|---|---|
+| 接続元情報 | Client Information |
+| DNS・IP | Domain、DNS Timing、IPv4 / IPv6 Preference、PTR、CAA |
+| Web接続 | TLS、HTTP/2、Security Headers |
+| メール関連DNS | MX、SPF、DMARC |
+| まとめて確認 | Domain Multi Check |
+| 読み物 | Public Explanation Pages |
 
-- Submitted targets and diagnostic results are not saved as public repository data.
-- Runtime may store an anonymous daily aggregate counter in SQLite.
-- Aggregate records do not contain submitted domain, submitted IP, URL, headers, cookies, User-Agent, client identifier, or diagnostic result.
+各機能の表示項目、結果の意味、利用例、限界は[Checks](CHECKS.md)で説明します。
 
-## Repository Role
+## 安全上の境界
 
-This public repository is for portfolio and reference use.
-It contains selected public-safe source, docs, templates, static assets, and configuration examples only.
+Network Checkは次の行為を行いません。
+
+- 対象システムの変更
+- ポートスキャン
+- 脆弱性診断や侵入試験
+- brute-forceや認証情報の試行
+- SMTP認証試験やメール送信
+- 大規模なcrawl
+
+TLSとHTTP/2は、public destinationであることを確認してから標準ポート443へ通常接続します。Security Headersはpublic HTTP / HTTPS URLだけを対象とし、非公開・特殊用途の宛先や非標準ポートを拒否します。
+
+## データ取扱いの基本姿勢
+
+入力されたドメイン、IPアドレス、URLや確認結果を、入力履歴として保存することを目的にしていません。runtimeでは匿名の日次集計counterを保存する場合がありますが、入力対象、request本文、client identifier、確認結果は集計recordへ含めません。
+
+詳細は[Data Handling](DATA_HANDLING.md)を参照してください。
+
+## Public Repositoryの役割
+
+Public Repositoryは、公開可能と確認したsource、template、static asset、設定例、文書を、参照・portfolio用途で提供するためのRepositoryです。private Source Repository全体の複製ではなく、選択した公開対象だけで構成します。
+
+privateな運用文書、環境固有path、production情報、認証情報、log、database、runtime outputは公開対象に含めません。詳細は[Public Repository Policy](PUBLIC_REPOSITORY_POLICY.md)と[Directory Structure](DIRECTORY_STRUCTURE.md)を参照してください。
+
+## 関連文書
+
+- [README](../README.md): 利用者向けの入口、起動方法、主要route
+- [Checks](CHECKS.md): 各確認機能の正式な解説
+- [Data Handling](DATA_HANDLING.md): request dataと匿名集計の扱い
+- [Security Policy](SECURITY_POLICY.md): 安全境界と機能限界
+- [Public Repository Policy](PUBLIC_REPOSITORY_POLICY.md): public / private境界
+- [Directory Structure](DIRECTORY_STRUCTURE.md): Public Repositoryの構成

@@ -1,6 +1,6 @@
 # Directory Structure
 
-`	ext
+```text
 network-check-public-export/
 |-- README.md
 |-- LICENSE
@@ -25,9 +25,7 @@ network-check-public-export/
     |-- DIRECTORY_STRUCTURE.md
     '-- images/
         '-- network-check-screenshot.png
-`",
-        ",
-        
+```
 
 - Selected application source.
 - Configuration examples.

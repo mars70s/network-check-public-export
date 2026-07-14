@@ -1,80 +1,73 @@
-﻿# Public Repository Policy
+# Public Repository Policy
 
-## Purpose
+## この文書の目的
 
-This document defines the public repository boundary for Network Check.
+この文書は、Network Checkのprivate Source RepositoryとPermanent Public Repositoryの役割、および公開・非公開の境界を説明します。
 
-The public repository must be safe to publish and must not expose private runtime information, local development paths, production URLs, secrets, logs, or operational notes.
+Public Repositoryは公開用成果物を保持するためのRepositoryです。private Source全体のbackup、完全なmirror、deploy先ではありません。
 
-## Public Repository Role
+## private Source Repositoryの役割
 
-The public repository contains:
+private Source Repository `mars70s/network-check`は、Network Checkの実装、公開前の文書制作、公開対象の選定と確認を行うsource of truthです。
 
-- public-safe source code
-- public README
-- public documentation
-- example environment configuration
-- static assets
-- templates
+公開する内容は、まずSource側で完成させ、実装との一致、文書間の整合、公開・非公開境界を確認します。Sourceに存在するfileや情報が、そのまますべて公開対象になるわけではありません。
 
-The public repository must not contain:
+## Permanent Public Repositoryの役割
 
-- private git history
-- production logs
-- databases
-- private deployment notes
-- real server paths
-- real local workstation paths
-- real production URLs
-- credentials
-- API keys
-- tokens
-- private certificates
-- private keys
+Permanent Public Repository `mars70s/network-check-public-export`は、公開対象として選定・確認された成果物を保持し、参照・portfolio用途で提供します。
 
-## Source Boundary
+Public Repositoryはprivate Source全体の完全な複製ではありません。公開対象は、公開する目的が明確で、内容と公開境界を確認したsource、document、template、static asset、設定例などに限定します。
 
-The public repository is generated from selected files only.
+選定と確認を行うことは、秘密情報の非混入や公開上の安全性を絶対的に保証することを意味しません。反映前に対象内容と差分を確認し、承認された範囲だけを扱います。
 
-It must not be created by directly copying the full private repository.
+## 固定対象の公開文書
 
-## Allowed Diagnostic Behavior
+現在の公開用ドキュメント制作で完成・同期する対象は、次の7文書です。
 
-Network Check may perform:
+1. `README.md`
+2. `docs/PROJECT_OVERVIEW.md`
+3. `docs/CHECKS.md`
+4. `docs/DATA_HANDLING.md`
+5. `docs/SECURITY_POLICY.md`
+6. `docs/PUBLIC_REPOSITORY_POLICY.md`
+7. `docs/DIRECTORY_STRUCTURE.md`
 
-- DNS lookups
-- TLS connection checks to port 443
-- HTTP/2 negotiation checks
-- display of client request metadata visible to the application
-- rendering of diagnostic results in HTML
+これらの文書はSource側で内容を完成・確認した後、Permanent Public側の同一pathへ反映し、両Repositoryの対象7文書を一致させます。
 
-## Disallowed Behavior
+## 公開しない情報
 
-Network Check must not perform:
+次の情報や成果物は公開対象に含めません。
 
-- port scanning
-- vulnerability scanning
-- SMTP authentication tests
-- mail sending tests
-- brute-force tests
-- crawling unrelated URLs
-- firewall modification
-- fail2ban modification
-- systemd modification
-- persistent storage of submitted domains as production logs
+- 認証情報
+- API key、token、password、秘密鍵
+- 非公開設定値
+- privateなlocal path
+- server、network、database、logの内部情報
+- 個人情報
+- 未公開の運用手順
+- private Sourceにだけ存在する内部資料
+- 公開が承認されていない成果物
 
-## Placeholder Policy
+公開文書では、必要に応じて`example.com`などのexample値を使用し、実際のprivate情報を記載しません。データ取扱いの詳細は[Data Handling](DATA_HANDLING.md)、確認機能の安全境界は[Security Policy](SECURITY_POLICY.md)を参照してください。
 
-Use placeholders in public documentation.
+## 反映の境界
 
-Recommended placeholders:
+Public Repositoryへの反映は、公開用成果物をGit上で更新する作業です。次の操作を意味しません。
 
-- example.com
-- contact@example.com
-- https://example.com/network-check/
-- /path/to/network-check
-- Network Check Project
+- applicationのdeploy
+- service restart
+- runtime設定の変更
+- private Source全体の公開
+- 運用環境との自動同期
 
-## Release Safety
+公開は自動実行を前提としません。また、完全なsanitizeが自動的に保証されるとは扱いません。対象file、内容、差分、公開しない情報の境界を反映前に確認します。
 
-Before publishing, confirm that no private path, hostname, server URL, token, key, certificate, log, database, or operational note exists in the public repository.
+## Public Repositoryから分かる範囲
+
+Public Repositoryは、公開された成果物の内容だけを示します。Public Repositoryだけから、非公開の実装、運用環境、内部構成を完全に把握または推定できることを保証しません。
+
+公開されていない情報が存在しないことや、private SourceとPublic Repositoryの構成が同一であることも意味しません。
+
+## 問題を報告する場合
+
+公開成果物の問題を報告する場合は、再現や確認に必要な最小限の情報を使用し、秘密情報、認証情報、個人情報、privateな運用情報を含めないでください。
