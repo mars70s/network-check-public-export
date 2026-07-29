@@ -10,6 +10,7 @@ from typing import Any
 
 DEFAULT_USAGE_DB = "usage_metrics.sqlite3"
 USAGE_DB_ENV = "NETWORK_CHECK_USAGE_DB"
+SQLITE_CONNECT_TIMEOUT = 0.25
 
 
 SCHEMA = """
@@ -38,7 +39,7 @@ def _ensure_parent_directory(db_path: Path) -> None:
 def _connect() -> sqlite3.Connection:
     db_path = usage_db_path()
     _ensure_parent_directory(db_path)
-    connection = sqlite3.connect(db_path)
+    connection = sqlite3.connect(db_path, timeout=SQLITE_CONNECT_TIMEOUT)
     connection.row_factory = sqlite3.Row
     return connection
 
