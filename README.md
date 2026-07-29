@@ -22,7 +22,7 @@ Network Checkは、公開されているDNS、TLS、HTTPなどの情報を外部
 - 公開DNSレコードと、A / AAAAの有無によるIPv4 / IPv6対応状況
 - DNS問い合わせ時間の参考値
 - 標準ポート443で接続したときのTLS version、cipher、証明書情報
-- `https://<domain>/`に対するHTTP versionとHTTP status
+- `https://example.com/`形式のURLに対するHTTP versionとHTTP status
 - メール配送先や公開されている送信・認証方針のDNSレコード
 - IPアドレスのreverse lookup、CAAレコード、選択したHTTP response headerの有無
 
@@ -43,6 +43,18 @@ HTTP/2確認はredirectを自動追跡せず、crawlや性能測定も行いま�
 - TLSとHTTP/2は標準ポート443への通常接続だけを行います。
 - Security Headersはpublic HTTP / HTTPS URLだけを受け付け、埋め込み認証情報、非標準ポート、localhost、private・reserved・non-public addressを拒否します。
 - Security Headersもredirectを自動追跡しません。
+
+## ネットワーク接続の安全方針
+
+Network Checkは、利用者が入力したドメイン名、IPアドレス、URLに対して外部ネットワーク確認を行う前に、接続先を検証します。
+
+公開向けの確認リクエストが、内部サービスや非公開ネットワークへのアクセスに使われないよう、ループバック、プライベート、リンクローカル、マルチキャスト、予約済み、その他の非公開または通常の公開診断対象として扱うべきではないアドレス範囲を拒否、または回避するように設計しています。
+
+また、接続先の境界が変わる可能性がある確認処理では、リダイレクト追跡を制限します。
+
+詳細は[Security Policy](docs/SECURITY_POLICY.md)を参照してください。この公開リポジトリでは、内部の実行環境、デプロイ設定、運用しきい値、ログ、不正利用対応などの内部運用情報は公開対象に含めません。
+
+Network Checkは、公開されている通常のネットワーク情報を確認するためのツールです。脆弱性スキャナ、侵入テストツール、ペネトレーションテストツール、認可回避ツールとして使用することを目的としていません。
 
 ## Domain Multi Check
 
