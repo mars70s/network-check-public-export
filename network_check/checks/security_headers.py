@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import http.client
 import ipaddress
-import socket
-import urllib.error
+import ssl
 import urllib.parse
-import urllib.request
 
 from typing import Any
+
+from .destination_guard import (
+    ConnectCandidate,
+    assert_public_connect_target,
+    is_disallowed_target_ip,
+    open_validated_tcp_socket,
+)
 
 SECURITY_HEADER_NAMES = [
     "Strict-Transport-Security",
@@ -28,22 +34,6 @@ DEFAULT_HTTP_PORTS = {
     "http": 80,
     "https": 443,
 }
-
-def is_disallowed_target_ip(ip_text: str) -> bool:
-    try:
-        parsed = ipaddress.ip_address(ip_text)
-    except ValueError:
-        return True
-
-    return (
-        not parsed.is_global
-        or parsed.is_private
-        or parsed.is_loopback
-        or parsed.is_link_local
-        or parsed.is_multicast
-        or parsed.is_unspecified
-        or parsed.is_reserved
-    )
 
 def normalize_security_header_url(url_input: str) -> dict[str, Any]:
     raw_input = url_input.strip()
@@ -137,78 +127,98 @@ def normalize_security_header_url(url_input: str) -> dict[str, Any]:
     }
 
 def resolve_public_target(host: str, port: int) -> dict[str, Any]:
-    try:
-        addrinfo = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
-    except socket.gaierror as exc:
-        return {
-            "ok": False,
-            "error": f"Name resolution failed. / 名前解決に失敗しました: {exc}",
-        }
+    result = assert_public_connect_target(host, port)
+    if not result["ok"] and result.get("is_ip_literal") and result.get("blocked_ips"):
+        result = dict(result)
+        result["error"] = "Target resolves to a non-public address. / 対象ホストが公開用ではないIPアドレスへ解決されました。"
+    return result
 
-    resolved_ips = sorted({item[4][0] for item in addrinfo})
 
-    if not resolved_ips:
-        return {
-            "ok": False,
-            "error": "No target address was resolved. / 宛先IPアドレスが解決できませんでした。",
-        }
+def _request_target(parsed: urllib.parse.ParseResult) -> str:
+    target = parsed.path or "/"
+    if parsed.params:
+        target += f";{parsed.params}"
+    if parsed.query:
+        target += f"?{parsed.query}"
+    return target
 
-    blocked_ips = [ip for ip in resolved_ips if is_disallowed_target_ip(ip)]
-    if blocked_ips:
-        return {
-            "ok": False,
-            "resolved_ips": resolved_ips,
-            "blocked_ips": blocked_ips,
-            "error": "Target resolves to a non-public address. / 対象ホストが公開用ではないIPアドレスへ解決されました。",
-        }
 
-    return {
-        "ok": True,
-        "resolved_ips": resolved_ips,
-    }
+def _open_http_connection(
+    parsed: urllib.parse.ParseResult,
+    candidate: ConnectCandidate,
+    timeout: float,
+) -> http.client.HTTPConnection:
+    host = parsed.hostname
+    if host is None:
+        raise ValueError("URL host is missing.")
 
-class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
+    port = parsed.port or DEFAULT_HTTP_PORTS[parsed.scheme]
+    connection: http.client.HTTPConnection
 
-def perform_security_header_request(url: str, method: str) -> dict[str, Any]:
+    if parsed.scheme == "https":
+        context = ssl.create_default_context()
+        connection = http.client.HTTPSConnection(host, port, timeout=timeout, context=context)
+        sock = open_validated_tcp_socket(candidate, timeout)
+        try:
+            connection.sock = context.wrap_socket(sock, server_hostname=host)
+        except Exception:
+            sock.close()
+            connection.close()
+            raise
+    else:
+        connection = http.client.HTTPConnection(host, port, timeout=timeout)
+        connection.sock = open_validated_tcp_socket(candidate, timeout)
+
+    return connection
+
+
+def perform_security_header_request(
+    url: str,
+    method: str,
+    candidates: list[ConnectCandidate],
+) -> dict[str, Any]:
+    parsed = urllib.parse.urlparse(url)
     request_headers = {
         "User-Agent": "NetworkCheck/1.0",
         "Accept": "*/*",
         "Connection": "close",
+        "Host": parsed.netloc,
     }
 
     if method == "GET":
         request_headers["Range"] = "bytes=0-0"
 
-    request = urllib.request.Request(
-        url,
-        method=method,
-        headers=request_headers,
-    )
+    last_error: Exception | None = None
 
-    opener = urllib.request.build_opener(NoRedirectHandler)
-
-    try:
-        with opener.open(request, timeout=8) as response:
+    for candidate in candidates:
+        connection = None
+        response = None
+        try:
+            connection = _open_http_connection(parsed, candidate, timeout=8)
+            connection.request(
+                method,
+                _request_target(parsed),
+                headers=request_headers,
+            )
+            response = connection.getresponse()
             return {
                 "ok": True,
                 "status_code": response.status,
                 "reason": response.reason,
                 "headers": response.headers,
             }
-    except urllib.error.HTTPError as exc:
-        return {
-            "ok": True,
-            "status_code": exc.code,
-            "reason": exc.reason,
-            "headers": exc.headers,
-        }
-    except Exception as exc:
-        return {
-            "ok": False,
-            "error": str(exc),
-        }
+        except Exception as exc:
+            last_error = exc
+        finally:
+            if response is not None:
+                response.close()
+            if connection is not None:
+                connection.close()
+
+    return {
+        "ok": False,
+        "error": str(last_error or "No validated connection candidates are available."),
+    }
 
 def check_security_headers(url_input: str) -> dict[str, Any]:
     normalized = normalize_security_header_url(url_input)
@@ -227,14 +237,15 @@ def check_security_headers(url_input: str) -> dict[str, Any]:
             "blocked_ips": resolved.get("blocked_ips", []),
         }
 
-    request_result = perform_security_header_request(normalized["url"], "HEAD")
+    candidates = resolved["candidates"]
+    request_result = perform_security_header_request(normalized["url"], "HEAD", candidates)
     method_used = "HEAD"
 
     if request_result["ok"] and request_result.get("status_code") in {405, 501}:
-        request_result = perform_security_header_request(normalized["url"], "GET")
+        request_result = perform_security_header_request(normalized["url"], "GET", candidates)
         method_used = "GET"
     elif not request_result["ok"]:
-        request_result = perform_security_header_request(normalized["url"], "GET")
+        request_result = perform_security_header_request(normalized["url"], "GET", candidates)
         method_used = "GET"
 
     if not request_result["ok"]:

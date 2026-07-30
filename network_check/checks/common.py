@@ -8,16 +8,24 @@ import dns.exception
 import dns.resolver
 
 DOMAIN_RE = re.compile(r"^(?=.{1,253}$)(?!-)([A-Za-z0-9-]{1,63}\.)+[A-Za-z]{2,63}\.?$")
+DNS_RESOLVER_LIFETIME = 3.0
+DNS_RESOLVER_TIMEOUT = 2.0
 
 def normalize_domain(domain: str) -> str:
     domain = domain.strip().removeprefix("http://").removeprefix("https://")
     domain = domain.split("/")[0].split(":")[0]
     return domain.lower().rstrip(".")
 
-def resolve_records(domain: str, record_type: str) -> list[str]:
+
+def create_dns_resolver() -> dns.resolver.Resolver:
     resolver = dns.resolver.Resolver()
-    resolver.lifetime = 3.0
-    resolver.timeout = 2.0
+    resolver.lifetime = DNS_RESOLVER_LIFETIME
+    resolver.timeout = DNS_RESOLVER_TIMEOUT
+    return resolver
+
+
+def resolve_records(domain: str, record_type: str) -> list[str]:
+    resolver = create_dns_resolver()
     try:
         answers = resolver.resolve(domain, record_type)
         return sorted({answer.to_text() for answer in answers})

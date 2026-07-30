@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import os
 import subprocess
 
@@ -7,6 +8,15 @@ from typing import Any
 
 from .common import DOMAIN_RE, normalize_domain
 from .destination_guard import assert_public_connect_target, build_blocked_target_result
+
+HTTP2_CAPABILITY_TIMEOUT = 5.0
+HTTP2_CANDIDATE_TIMEOUT = 10.0
+
+
+def build_curl_resolve_entry(host: str, port: int, ip_text: str) -> str:
+    parsed_ip = ipaddress.ip_address(ip_text)
+    address = f"[{parsed_ip}]" if parsed_ip.version == 6 else str(parsed_ip)
+    return f"{host}:{port}:{address}"
 
 def check_http2(domain: str) -> dict[str, Any]:
     normalized = normalize_domain(domain)
@@ -24,10 +34,10 @@ def check_http2(domain: str) -> dict[str, Any]:
 
     try:
         version_result = subprocess.run(
-            ["curl", "--version"],
+            ["curl", "--disable", "--version"],
             capture_output=True,
             text=True,
-            timeout=5,
+            timeout=HTTP2_CAPABILITY_TIMEOUT,
         )
 
         if "HTTP2" not in version_result.stdout:
@@ -40,13 +50,50 @@ def check_http2(domain: str) -> dict[str, Any]:
             }
 
         target_url = f"https://{normalized}/"
+        result = None
+        last_error: Exception | None = None
+        attempted_ips: set[str] = set()
 
-        result = subprocess.run(
-            ["curl", "-I", "--http2", "-s", "-o", os.devnull, "-w", "%{http_version} %{http_code} %{url_effective}", target_url],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+        for candidate in guard_result["candidates"]:
+            if candidate.ip in attempted_ips:
+                continue
+            attempted_ips.add(candidate.ip)
+
+            resolve_entry = build_curl_resolve_entry(normalized, 443, candidate.ip)
+            try:
+                candidate_result = subprocess.run(
+                    [
+                        "curl",
+                        "--disable",
+                        "-I",
+                        "--http2",
+                        "--resolve",
+                        resolve_entry,
+                        "--noproxy",
+                        "*",
+                        "-s",
+                        "-o",
+                        os.devnull,
+                        "-w",
+                        "%{http_version} %{http_code} %{url_effective}",
+                        target_url,
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=HTTP2_CANDIDATE_TIMEOUT,
+                )
+            except Exception as exc:
+                last_error = exc
+                continue
+
+            result = candidate_result
+            if candidate_result.returncode == 0:
+                break
+
+        if result is None:
+            if last_error is not None:
+                raise last_error
+            raise OSError("No validated connection candidates are available.")
 
         output = result.stdout.strip()
         parts = output.split(" ", 2)

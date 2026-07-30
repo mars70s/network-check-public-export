@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+from dataclasses import dataclass
 
 from typing import Any
 
@@ -12,6 +13,15 @@ LOCAL_HOSTNAMES = {
     "ip6-localhost",
     "ip6-loopback",
 }
+
+
+@dataclass(frozen=True)
+class ConnectCandidate:
+    family: int
+    socktype: int
+    proto: int
+    ip: str
+    sockaddr: tuple[Any, ...]
 
 
 def is_disallowed_target_ip(ip_text: str) -> bool:
@@ -99,6 +109,24 @@ def normalize_connect_host(host_input: str) -> dict[str, Any]:
     }
 
 
+def _candidate_from_ip_literal(ip_text: str, port: int) -> ConnectCandidate:
+    parsed = ipaddress.ip_address(ip_text)
+    if parsed.version == 6:
+        family = socket.AF_INET6
+        sockaddr = (ip_text, port, 0, 0)
+    else:
+        family = socket.AF_INET
+        sockaddr = (ip_text, port)
+
+    return ConnectCandidate(
+        family=family,
+        socktype=socket.SOCK_STREAM,
+        proto=socket.IPPROTO_TCP,
+        ip=ip_text,
+        sockaddr=sockaddr,
+    )
+
+
 def resolve_public_host_for_connect(host_input: str, port: int) -> dict[str, Any]:
     if not isinstance(port, int) or port < 1 or port > 65535:
         return {
@@ -115,11 +143,13 @@ def resolve_public_host_for_connect(host_input: str, port: int) -> dict[str, Any
         return result
 
     if normalized.get("is_ip_literal"):
+        candidate = _candidate_from_ip_literal(normalized["host"], port)
         return {
             "ok": True,
             "host": normalized["host"],
             "port": port,
             "resolved_ips": normalized.get("resolved_ips", [normalized["host"]]),
+            "candidates": [candidate],
         }
 
     host = normalized["host"]
@@ -134,7 +164,25 @@ def resolve_public_host_for_connect(host_input: str, port: int) -> dict[str, Any
             "error": f"Name resolution failed. / 名前解決に失敗しました: {exc}",
         }
 
-    resolved_ips = sorted({item[4][0] for item in addrinfo})
+    candidates: list[ConnectCandidate] = []
+    seen_candidates: set[tuple[int, int, int, tuple[Any, ...]]] = set()
+
+    for family, socktype, proto, _canonname, sockaddr in addrinfo:
+        candidate_key = (family, socktype, proto, sockaddr)
+        if candidate_key in seen_candidates:
+            continue
+        seen_candidates.add(candidate_key)
+        candidates.append(
+            ConnectCandidate(
+                family=family,
+                socktype=socktype,
+                proto=proto,
+                ip=sockaddr[0],
+                sockaddr=sockaddr,
+            )
+        )
+
+    resolved_ips = sorted({candidate.ip for candidate in candidates})
 
     if not resolved_ips:
         return {
@@ -161,11 +209,23 @@ def resolve_public_host_for_connect(host_input: str, port: int) -> dict[str, Any
         "host": host,
         "port": port,
         "resolved_ips": resolved_ips,
+        "candidates": candidates,
     }
 
 
 def assert_public_connect_target(host_input: str, port: int) -> dict[str, Any]:
     return resolve_public_host_for_connect(host_input, port)
+
+
+def open_validated_tcp_socket(candidate: ConnectCandidate, timeout: float) -> socket.socket:
+    sock = socket.socket(candidate.family, candidate.socktype, candidate.proto)
+    try:
+        sock.settimeout(timeout)
+        sock.connect(candidate.sockaddr)
+        return sock
+    except Exception:
+        sock.close()
+        raise
 
 
 def build_blocked_target_result(domain: str, guard_result: dict[str, Any], check_label: str) -> dict[str, Any]:

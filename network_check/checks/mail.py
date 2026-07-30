@@ -5,7 +5,7 @@ from typing import Any
 import dns.exception
 import dns.resolver
 
-from .common import DOMAIN_RE, normalize_domain
+from .common import DOMAIN_RE, create_dns_resolver, normalize_domain
 
 def check_mx_records(domain: str) -> dict[str, Any]:
     normalized = normalize_domain(domain)
@@ -18,7 +18,7 @@ def check_mx_records(domain: str) -> dict[str, Any]:
         }
 
     try:
-        answers = dns.resolver.resolve(normalized, "MX")
+        answers = create_dns_resolver().resolve(normalized, "MX")
         records = sorted(
             [
                 {
@@ -80,7 +80,7 @@ def check_spf_records(domain: str) -> dict[str, Any]:
         }
 
     try:
-        answers = dns.resolver.resolve(normalized, "TXT")
+        answers = create_dns_resolver().resolve(normalized, "TXT")
         txt_records = [answer.to_text().strip('"') for answer in answers]
         spf_records = [record for record in txt_records if record.lower().startswith("v=spf1")]
 
@@ -136,7 +136,7 @@ def check_dmarc_records(domain: str) -> dict[str, Any]:
     dmarc_domain = f"_dmarc.{normalized}"
 
     try:
-        answers = dns.resolver.resolve(dmarc_domain, "TXT")
+        answers = create_dns_resolver().resolve(dmarc_domain, "TXT")
         txt_records = [answer.to_text().strip('"') for answer in answers]
         dmarc_records = [record for record in txt_records if record.upper().startswith("V=DMARC1")]
 

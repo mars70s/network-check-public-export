@@ -1,13 +1,19 @@
 from __future__ import annotations
 
-import socket
 import ssl
 from datetime import datetime, timezone
 
 from typing import Any
 
 from .common import DOMAIN_RE, normalize_domain
-from .destination_guard import assert_public_connect_target, build_blocked_target_result
+from .destination_guard import (
+    assert_public_connect_target,
+    build_blocked_target_result,
+    open_validated_tcp_socket,
+)
+
+TLS_TCP_CONNECT_TIMEOUT = 5.0
+
 
 def format_cert_name(name: tuple[Any, ...]) -> str:
     parts: list[str] = []
@@ -32,11 +38,28 @@ def check_tls(domain: str) -> dict[str, Any]:
 
     try:
         context = ssl.create_default_context()
-        with socket.create_connection((normalized, 443), timeout=5) as sock:
-            with context.wrap_socket(sock, server_hostname=normalized) as tls_sock:
-                tls_version = tls_sock.version()
-                cipher = tls_sock.cipher()
-                cert = tls_sock.getpeercert()
+        last_error: Exception | None = None
+
+        for candidate in guard_result["candidates"]:
+            sock = None
+            try:
+                sock = open_validated_tcp_socket(candidate, timeout=TLS_TCP_CONNECT_TIMEOUT)
+                tls_sock = context.wrap_socket(sock, server_hostname=normalized)
+                sock = None
+                with tls_sock:
+                    tls_version = tls_sock.version()
+                    cipher = tls_sock.cipher()
+                    cert = tls_sock.getpeercert()
+                break
+            except Exception as exc:
+                last_error = exc
+            finally:
+                if sock is not None:
+                    sock.close()
+        else:
+            if last_error is not None:
+                raise last_error
+            raise OSError("No validated connection candidates are available.")
 
         not_after = cert.get("notAfter")
         expires_at = "Unknown"
