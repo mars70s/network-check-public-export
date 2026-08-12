@@ -26,6 +26,10 @@ Network Checkは、公開されているネットワーク・ドメイン情報�
 
 各機能の表示項目、結果の意味、利用例、限界は[Checks](CHECKS.md)で説明します。
 
+## Architecture
+
+UIを分離し、同じNetwork Checkのcoreを別サイトへ展開しやすくしています。check logicは共通coreとして再利用し、application logicはUIから独立させ、site-specific UI / presentationはcomposition layerで組み立てます。既存check logicをサイトごとに複製・再実装する構成ではなく、同一source内のmodule boundaryとして再利用するものであり、coreを別HTTP serviceやmicroserviceとして分離するものではありません。
+
 ## 安全上の境界
 
 Network Checkは次の行為を行いません。

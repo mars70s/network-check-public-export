@@ -9,7 +9,7 @@ from network_check.web.metrics import router as metrics_router
 from network_check.web.public import router as public_router
 
 
-def create_network_check_app() -> FastAPI:
+def create_network_check_app(*, include_metrics: bool = True) -> FastAPI:
     """Build the shared Network Check application composition."""
 
     application = FastAPI(
@@ -20,5 +20,6 @@ def create_network_check_app() -> FastAPI:
     application.include_router(legacy_router)
     application.include_router(public_router)
     application.include_router(api_router)
-    application.include_router(metrics_router)
+    if include_metrics:
+        application.include_router(metrics_router)
     return application
