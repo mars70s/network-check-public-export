@@ -9,11 +9,10 @@
 <body class="public-view">
   <header class="site-header public-header">
     <div class="container public-header-inner">
-      <a class="brand public-brand" href="/">doudemoiikedo.com</a>
+      <a class="brand public-brand" href="{{ public_path }}/">Network Check</a>
       <nav class="nav public-nav" aria-label="Public navigation">
         <a class="{% if page == 'public_network_check' %}active{% endif %}" href="/network-check/">Network Check</a>
-        <a href="/about/">About</a>
-        <a href="mailto:lazy@doudemoiikedo.com">Contact</a>
+        <a href="{{ base_path }}/contact">Contact</a>
       </nav>
     </div>
   </header>

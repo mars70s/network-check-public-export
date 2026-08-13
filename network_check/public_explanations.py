@@ -97,7 +97,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「DNS」のこと",
+                "DNSの基本",
                 [
                     section(
                         "ドメイン名が、どの住所へ案内されているかを確認する",
@@ -204,7 +204,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「PTR」のこと",
+                "PTRの基本",
                 [
                     section(
                         "住所から見える名前を確認する",
@@ -279,7 +279,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「CNAME」のこと",
+                "CNAMEの基本",
                 [
                     section(
                         "別の名前へ案内される様子を見る",
@@ -354,7 +354,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「IPv4 / IPv6」のこと",
+                "IPv4 / IPv6の基本",
                 [
                     section(
                         "2種類の住所を見る",
@@ -430,7 +430,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「MX」のこと",
+                "MXの基本",
                 [
                     section(
                         "メールの受け取り窓口を見る",
@@ -498,7 +498,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「SPF」のこと",
+                "SPFの基本",
                 [
                     section(
                         "送信元のルールを見る",
@@ -567,7 +567,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「DMARC」のこと",
+                "DMARCの基本",
                 [
                     section(
                         "失敗したメールへの扱い方を見る",
@@ -642,7 +642,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「CAA」のこと",
+                "CAAの基本",
                 [
                     section(
                         "証明書を出してよい相手を見る",
@@ -710,7 +710,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「TLS」のこと",
+                "TLSの基本",
                 [
                     section(
                         "HTTPS の入口で見える証明書を見る",
@@ -780,7 +780,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「Security Headers」のこと",
+                "Security Headersの基本",
                 [
                     section(
                         "ブラウザへの伝え方を見る",
@@ -849,7 +849,7 @@ PUBLIC_EXPLANATIONS: dict[str, dict[str, Any]] = {
         cards={
             "general": card(
                 "基本の見方",
-                "どうでもいいけど、少しだけ気になる「HTTP Status」のこと",
+                "HTTP Statusの基本",
                 [
                     section(
                         "応答の状態を示す番号を見る",
