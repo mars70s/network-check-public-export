@@ -120,9 +120,9 @@ def check_http2(domain: str) -> dict[str, Any]:
             "level": level,
         }
 
-    except Exception as exc:
+    except Exception:
         return {
             "ok": False,
             "domain": normalized,
-            "error": f"HTTP/2 check failed. / HTTP/2確認に失敗しました: {exc}",
+            "error": "HTTP/2 check failed. / HTTP/2確認に失敗しました。",
         }

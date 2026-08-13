@@ -156,12 +156,12 @@ def resolve_public_host_for_connect(host_input: str, port: int) -> dict[str, Any
 
     try:
         addrinfo = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
-    except socket.gaierror as exc:
+    except socket.gaierror:
         return {
             "ok": False,
             "host": host,
             "port": port,
-            "error": f"Name resolution failed. / 名前解決に失敗しました: {exc}",
+            "error": "Name resolution failed. / 名前解決に失敗しました。",
         }
 
     candidates: list[ConnectCandidate] = []

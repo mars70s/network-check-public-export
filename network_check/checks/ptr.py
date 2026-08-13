@@ -49,14 +49,14 @@ def check_ptr(ip_input: str) -> dict[str, Any]:
         ptr_records = sorted({answer.to_text() for answer in answers})
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.exception.Timeout):
         ptr_records = []
-    except Exception as exc:
+    except Exception:
         return {
             "ok": False,
             "ip_input": raw_input,
             "ip": str(parsed_ip),
             "ip_version": "IPv4" if parsed_ip.version == 4 else "IPv6",
             "reverse_name": reverse_name_text,
-            "error": f"PTR lookup failed. / PTR確認に失敗しました: {exc}",
+            "error": "PTR lookup failed. / PTR確認に失敗しました。",
         }
 
     if ptr_records:

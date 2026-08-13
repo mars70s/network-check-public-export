@@ -39,11 +39,11 @@ def check_caa(domain: str) -> dict[str, Any]:
 
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.exception.Timeout):
         caa_records = []
-    except Exception as exc:
+    except Exception:
         return {
             "ok": False,
             "domain": normalized,
-            "error": f"CAA lookup failed. / CAA確認に失敗しました: {exc}",
+            "error": "CAA lookup failed. / CAA確認に失敗しました。",
         }
 
     if caa_records:

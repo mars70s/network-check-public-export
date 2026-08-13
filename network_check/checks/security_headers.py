@@ -215,9 +215,15 @@ def perform_security_header_request(
             if connection is not None:
                 connection.close()
 
+    if last_error is not None:
+        return {
+            "ok": False,
+            "error": "Connection failed. / 接続に失敗しました。",
+        }
+
     return {
         "ok": False,
-        "error": str(last_error or "No validated connection candidates are available."),
+        "error": "No validated connection candidates are available. / 有効な接続先candidateがありません。",
     }
 
 def check_security_headers(url_input: str) -> dict[str, Any]:
@@ -254,7 +260,7 @@ def check_security_headers(url_input: str) -> dict[str, Any]:
             "url": normalized["url"],
             "host": normalized["host"],
             "resolved_ips": resolved["resolved_ips"],
-            "error": f"HTTP request failed. / HTTPリクエストに失敗しました: {request_result['error']}",
+            "error": "HTTP request failed. / HTTPリクエストに失敗しました。",
         }
 
     response_headers = request_result["headers"]

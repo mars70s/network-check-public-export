@@ -52,20 +52,19 @@ def check_mx_records(domain: str) -> dict[str, Any]:
         dns.resolver.NXDOMAIN,
         dns.resolver.NoNameservers,
         dns.exception.Timeout,
-    ) as exc:
+    ):
         return {
             "ok": True,
             "domain": normalized,
             "records": [],
             "status": "No MX records found. / MXレコードが見つかりませんでした。",
             "level": "warn",
-            "detail": str(exc),
         }
-    except Exception as exc:
+    except Exception:
         return {
             "ok": False,
             "domain": normalized,
-            "error": f"MX record check failed. / MXレコード確認に失敗しました: {exc}",
+            "error": "MX record check failed. / MXレコード確認に失敗しました。",
         }
 
 
@@ -106,20 +105,19 @@ def check_spf_records(domain: str) -> dict[str, Any]:
         dns.resolver.NXDOMAIN,
         dns.resolver.NoNameservers,
         dns.exception.Timeout,
-    ) as exc:
+    ):
         return {
             "ok": True,
             "domain": normalized,
             "records": [],
             "status": "No SPF record found. / SPFレコードが見つかりませんでした。",
             "level": "warn",
-            "detail": str(exc),
         }
-    except Exception as exc:
+    except Exception:
         return {
             "ok": False,
             "domain": normalized,
-            "error": f"SPF record check failed. / SPFレコード確認に失敗しました: {exc}",
+            "error": "SPF record check failed. / SPFレコード確認に失敗しました。",
         }
 
 
@@ -164,7 +162,7 @@ def check_dmarc_records(domain: str) -> dict[str, Any]:
         dns.resolver.NXDOMAIN,
         dns.resolver.NoNameservers,
         dns.exception.Timeout,
-    ) as exc:
+    ):
         return {
             "ok": True,
             "domain": normalized,
@@ -172,12 +170,11 @@ def check_dmarc_records(domain: str) -> dict[str, Any]:
             "records": [],
             "status": "No DMARC record found. / DMARCレコードが見つかりませんでした。",
             "level": "warn",
-            "detail": str(exc),
         }
-    except Exception as exc:
+    except Exception:
         return {
             "ok": False,
             "domain": normalized,
             "query_domain": dmarc_domain,
-            "error": f"DMARC record check failed. / DMARCレコード確認に失敗しました: {exc}",
+            "error": "DMARC record check failed. / DMARCレコード確認に失敗しました。",
         }

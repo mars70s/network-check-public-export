@@ -30,23 +30,23 @@ def timed_resolve_records(domain: str, record_type: str) -> dict[str, Any]:
         dns.resolver.NXDOMAIN,
         dns.resolver.NoNameservers,
         dns.exception.Timeout,
-    ) as exc:
+    ):
         elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
         return {
             "ok": False,
             "record_type": record_type,
             "records": [],
             "elapsed_ms": elapsed_ms,
-            "error": str(exc),
+            "error": "DNS query failed. / DNS問い合わせに失敗しました。",
         }
-    except Exception as exc:
+    except Exception:
         elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
         return {
             "ok": False,
             "record_type": record_type,
             "records": [],
             "elapsed_ms": elapsed_ms,
-            "error": str(exc),
+            "error": "DNS query failed. / DNS問い合わせに失敗しました。",
         }
 
 def check_dns_timing(domain: str) -> dict[str, Any]:

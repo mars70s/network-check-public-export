@@ -112,9 +112,9 @@ def check_tls(domain: str) -> dict[str, Any]:
             "level": level,
         }
 
-    except Exception as exc:
+    except Exception:
         return {
             "ok": False,
             "domain": normalized,
-            "error": f"TLS connection failed. / TLS接続に失敗しました: {exc}",
+            "error": "TLS connection failed. / TLS接続に失敗しました。",
         }
