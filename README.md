@@ -4,6 +4,10 @@ Network Checkは、公開されているDNS、TLS、HTTPなどの情報を外部
 
 セキュリティ診断、脆弱性検査、侵入試験を行うサービスではありません。表示結果だけで、対象サービス全体の正常性や安全性を保証することもできません。
 
+## Architecture
+
+Network Checkは、共通のcheck coreとUIから独立したapplication logicを再利用し、公開先ごとのUI / presentationをcompositionで組み立てられる構成です。check logicをサイトごとに複製する方式ではなく、同一source内のmodule boundaryによる再利用です。別HTTP serviceやmicroserviceとしてcoreを分離する構成ではありません。詳細は[Project Overview](docs/PROJECT_OVERVIEW.md)を参照してください。
+
 ## 主な確認機能
 
 - Client Information
