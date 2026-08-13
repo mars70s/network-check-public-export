@@ -1,4 +1,4 @@
-"""doudemoiikedo.com ASGI composition root."""
+"""Public Network Check composition root."""
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -9,7 +9,7 @@ from apps.composition import create_network_check_app
 
 
 def create_app() -> FastAPI:
-    """Build the current doudemoiikedo.com application without changing its routes."""
+    """Build the public export's reference application without changing its routes."""
 
     return create_network_check_app()
 

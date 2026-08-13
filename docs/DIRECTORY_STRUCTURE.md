@@ -12,7 +12,7 @@ network-check-public-export/
 |-- apps/
 |   |-- __init__.py
 |   |-- composition.py
-|   '-- doudemoiikedo.py
+|   '-- reference.py
 |-- network_check/
 |   |-- __init__.py
 |   |-- public_explanations.py
@@ -51,7 +51,7 @@ network-check-public-export/
 
 ## Selected Source Boundary
 
-- `main.py` is a compatibility ASGI entrypoint that imports the selected public application from `apps.doudemoiikedo`.
+- `main.py` is a compatibility ASGI entrypoint that imports the selected public application from `apps.reference`.
 - `apps/composition.py` builds the shared FastAPI application from selected public routers.
 - `network_check/application/` contains UI-independent Multi Check request handling.
 - `network_check/web/` contains selected public-safe route adapters and template context helpers.
