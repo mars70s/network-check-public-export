@@ -36,6 +36,7 @@ from network_check.checks.destination_guard import (  # noqa: E402
     resolve_public_host_for_connect,
 )
 from network_check.checks.http2 import check_http2  # noqa: E402
+from network_check.checks.security_headers import check_security_headers  # noqa: E402
 from network_check.checks.tls import check_tls  # noqa: E402
 
 
@@ -89,6 +90,19 @@ class DestinationGuardTests(unittest.TestCase):
 
         self.assertEqual(result["guard"], "destination_safety")
         run.assert_not_called()
+
+    def test_security_headers_rejects_before_opening_a_connection(self) -> None:
+        with (
+            patch(
+                "network_check.checks.security_headers.assert_public_connect_target",
+                return_value={"ok": False, "error": "blocked"},
+            ),
+            patch("network_check.checks.security_headers.open_validated_tcp_socket") as open_socket,
+        ):
+            result = check_security_headers("https://example.com/")
+
+        self.assertFalse(result["ok"])
+        open_socket.assert_not_called()
 
 
 if __name__ == "__main__":
