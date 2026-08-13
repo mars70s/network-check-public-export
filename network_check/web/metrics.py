@@ -18,15 +18,20 @@ async def usage_metrics(request: Request) -> HTMLResponse:
     usage_dashboard: dict[str, Any] = {}
     try:
         usage_dashboard = get_usage_dashboard()
-    except Exception as exc:
-        metrics_error = str(exc)
+    except Exception:
+        metrics_error = "Usage metrics are temporarily unavailable. / 利用状況の集計を一時的に表示できません。"
+
+    # db_path is runtime/internal detail and is intentionally excluded from
+    # the template context, not just left unrendered by the template.
+    metrics_status = {"db_exists": usage_metrics_status()["db_exists"]}
+
     return templates.TemplateResponse(
         "usage_metrics.html",
         template_context(
             request,
             "usage_metrics",
             usage_dashboard=usage_dashboard,
-            metrics_status=usage_metrics_status(),
+            metrics_status=metrics_status,
             metrics_error=metrics_error,
         ),
     )
