@@ -60,6 +60,11 @@ Network Checkは、利用者が入力したドメイン名、IPアドレス、UR
 
 Network Checkは、公開されている通常のネットワーク情報を確認するためのツールです。脆弱性スキャナ、侵入テストツール、ペネトレーションテストツール、認可回避ツールとして使用することを目的としていません。
 
+### 公開安全モデル
+
+- Layer 1 — Application: 外部接続の前に宛先を検証し、non-public targetを拒否するdestination-safety / SSRF-risk mitigationを実装しています。接続先の境界が変わり得る確認ではredirectを自動追跡しません。
+- Layer 2 — Reference deployment: endpoint-specific rate limitingは、API abuse mitigationのためのenvironment-specific controlです。この公開Repositoryのportable application logicではありません。
+
 ## Domain Multi Check
 
 `/multi-check`と`/network-check/`では、次の9項目から選択してまとめて実行できます。

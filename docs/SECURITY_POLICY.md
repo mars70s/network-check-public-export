@@ -121,4 +121,8 @@ Network Checkは、次のような接続先を拒否、または回避するよ�
 
 この公開リポジトリでは、Network Checkの一般的な安全境界のみを説明します。内部の実行環境、デプロイ設定、運用しきい値、ログ、不正利用対応などの内部運用情報は公開対象に含めません。
 
+## Reference deploymentのAPI abuse mitigation
+
+endpoint-specific rate limitingは、reference deploymentで適用するenvironment-specificなAPI abuse mitigationです。これはこの公開Repositoryに含まれるportable application logicではありません。具体的なしきい値およびdeployment configurationは、内部運用情報として意図的に公開しません。
+
 Network Checkは、公開されている通常のネットワーク情報を確認するためのツールです。脆弱性スキャナ、侵入テストツール、ペネトレーションテストツール、認可回避ツールとして使用することを目的としていません。
