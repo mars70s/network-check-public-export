@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
+from starlette.concurrency import run_in_threadpool
 
 from network_check.checks.caa import check_caa
 from network_check.checks.dns import check_domain
@@ -60,7 +61,8 @@ async def domain_get(request: Request) -> HTMLResponse:
 
 @router.post("/domain", response_class=HTMLResponse)
 async def domain_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    return templates.TemplateResponse("domain.html", template_context(request, "domain", result=check_domain(domain), domain_input=domain))
+    result = await run_in_threadpool(check_domain, domain)
+    return templates.TemplateResponse("domain.html", template_context(request, "domain", result=result, domain_input=domain))
 
 @router.get("/caa", response_class=HTMLResponse)
 async def caa_get(request: Request) -> HTMLResponse:
@@ -68,7 +70,8 @@ async def caa_get(request: Request) -> HTMLResponse:
 
 @router.post("/caa", response_class=HTMLResponse)
 async def caa_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    return templates.TemplateResponse("caa.html", template_context(request, "caa", result=check_caa(domain), domain_input=domain))
+    result = await run_in_threadpool(check_caa, domain)
+    return templates.TemplateResponse("caa.html", template_context(request, "caa", result=result, domain_input=domain))
 
 @router.get("/security-headers", response_class=HTMLResponse)
 async def security_headers_get(request: Request) -> HTMLResponse:
@@ -79,7 +82,7 @@ async def security_headers_get(request: Request) -> HTMLResponse:
 
 @router.post("/security-headers", response_class=HTMLResponse)
 async def security_headers_post(request: Request, url: str = Form(...)) -> HTMLResponse:
-    result = check_security_headers(url)
+    result = await run_in_threadpool(check_security_headers, url)
     return templates.TemplateResponse(
         "security_headers.html",
         template_context(request, "security_headers", result=result, url_input=url),
@@ -91,7 +94,8 @@ async def ptr_get(request: Request) -> HTMLResponse:
 
 @router.post("/ptr", response_class=HTMLResponse)
 async def ptr_post(request: Request, ip_input: str = Form(...)) -> HTMLResponse:
-    return templates.TemplateResponse("ptr.html", template_context(request, "ptr", result=check_ptr(ip_input), ip_input=ip_input))
+    result = await run_in_threadpool(check_ptr, ip_input)
+    return templates.TemplateResponse("ptr.html", template_context(request, "ptr", result=result, ip_input=ip_input))
 
 @router.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request) -> HTMLResponse:
@@ -114,7 +118,7 @@ async def tls_get(request: Request) -> HTMLResponse:
 
 @router.post("/tls", response_class=HTMLResponse)
 async def tls_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    result = check_tls(domain)
+    result = await run_in_threadpool(check_tls, domain)
     return templates.TemplateResponse(
         "tls.html",
         template_context(request, "tls", result=result, domain_input=domain),
@@ -129,7 +133,7 @@ async def http2_get(request: Request) -> HTMLResponse:
 
 @router.post("/http2", response_class=HTMLResponse)
 async def http2_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    result = check_http2(domain)
+    result = await run_in_threadpool(check_http2, domain)
     return templates.TemplateResponse(
         "http2.html",
         template_context(request, "http2", result=result, domain_input=domain),
@@ -144,7 +148,7 @@ async def dns_timing_get(request: Request) -> HTMLResponse:
 
 @router.post("/dns-timing", response_class=HTMLResponse)
 async def dns_timing_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    result = check_dns_timing(domain)
+    result = await run_in_threadpool(check_dns_timing, domain)
     return templates.TemplateResponse(
         "dns_timing.html",
         template_context(request, "dns_timing", result=result, domain_input=domain),
@@ -159,7 +163,7 @@ async def ip_preference_get(request: Request) -> HTMLResponse:
 
 @router.post("/ip-preference", response_class=HTMLResponse)
 async def ip_preference_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    result = check_ip_preference(domain)
+    result = await run_in_threadpool(check_ip_preference, domain)
     return templates.TemplateResponse(
         "ip_preference.html",
         template_context(request, "ip_preference", result=result, domain_input=domain),
@@ -174,7 +178,7 @@ async def mx_get(request: Request) -> HTMLResponse:
 
 @router.post("/mx", response_class=HTMLResponse)
 async def mx_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    result = check_mx_records(domain)
+    result = await run_in_threadpool(check_mx_records, domain)
     return templates.TemplateResponse(
         "mx.html",
         template_context(request, "mx", result=result, domain_input=domain),
@@ -189,7 +193,7 @@ async def spf_get(request: Request) -> HTMLResponse:
 
 @router.post("/spf", response_class=HTMLResponse)
 async def spf_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    result = check_spf_records(domain)
+    result = await run_in_threadpool(check_spf_records, domain)
     return templates.TemplateResponse(
         "spf.html",
         template_context(request, "spf", result=result, domain_input=domain),
@@ -204,7 +208,7 @@ async def dmarc_get(request: Request) -> HTMLResponse:
 
 @router.post("/dmarc", response_class=HTMLResponse)
 async def dmarc_post(request: Request, domain: str = Form(...)) -> HTMLResponse:
-    result = check_dmarc_records(domain)
+    result = await run_in_threadpool(check_dmarc_records, domain)
     return templates.TemplateResponse(
         "dmarc.html",
         template_context(request, "dmarc", result=result, domain_input=domain),
