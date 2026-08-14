@@ -4,8 +4,9 @@
 
 - Repository: `mars70s/network-check-public-export`
 - Branch: `main`
-- Current baseline commit: `b4bc4164ce87aab236a004fe2d355e89001191e8`
-- Automated tests: 43/43 PASS（`tests/`配下、`python -m unittest discover -s tests`で確認）
+- Implementation baseline（F1〜F5 + Additional Findingの実装修正が完了した時点のcommit）: `b4bc4164ce87aab236a004fe2d355e89001191e8`
+- Docs closeout commit（本文書と`docs/BACKLOG.md`を新設した時点のcommit）: `d8dbff49a5f09fe04b1e538f3d83b1e49064a757`
+- Automated tests: 43/43 PASS（implementation baseline `b4bc416`時点、`tests/`配下、`python -m unittest discover -s tests`で確認。docs closeout commitはdocs-onlyのためtest構成に影響しない）
 
 ## Review remediation status
 
